@@ -1,10 +1,236 @@
-import React, { useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001"
+const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
+
+function usePathname() {
+  const [pathname, setPathname] = useState(window.location.pathname)
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname)
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
+  return pathname
+}
+
+function StatusBadge({ status }) {
+  if (!status) return null
+
+  const labels = {
+    processing: "Procesando",
+    success: "Exito",
+    error: "Error",
+    done: "Listo",
+  }
+
+  return <span className={`status-pill ${status}`}>{labels[status] || status}</span>
+}
+
+function QueryPage({ question, setQuestion, handleConsult, consultStatus, responseData, streamingText }) {
+  const previewMatches = useMemo(() => responseData?.matches || [], [responseData])
+
+  return (
+    <div className="page-shell">
+      <section className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Consulta semantica</p>
+          <h1>Pregunta a tu base de conocimiento.</h1>
+          <p className="hero-text">
+            La pantalla inicial queda enfocada en consultas. Entrenamiento vive en una ruta
+            separada para la operacion interna del sistema.
+          </p>
+        </div>
+        <div className="hero-meta">
+          <div className="meta-card">
+            <span>Proveedor embeddings</span>
+            <strong>Gemini</strong>
+          </div>
+          <div className="meta-card">
+            <span>Proveedor respuesta</span>
+            <strong>Groq</strong>
+          </div>
+          <div className="meta-card">
+            <span>Vector store</span>
+            <strong>Supabase</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="query-panel">
+        <div className="section-head">
+          <div>
+            <p className="section-label">Ruta principal</p>
+            <h2>Buscar respuesta</h2>
+          </div>
+          <StatusBadge status={consultStatus} />
+        </div>
+
+        <form className="query-form" onSubmit={handleConsult}>
+          <label className="field">
+            <span>Pregunta</span>
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ej: Que permisos tiene un administrador?"
+            />
+          </label>
+
+          <button className="primary-button" type="submit">
+            Consultar
+          </button>
+        </form>
+      </section>
+
+      <section className="results-grid">
+        <article className="result-card answer-card">
+          <div className="section-head compact">
+            <div>
+              <p className="section-label">Salida</p>
+              <h3>Respuesta</h3>
+            </div>
+          </div>
+
+          {consultStatus === "processing" && streamingText ? (
+            <pre className="response-block accent">{streamingText}</pre>
+          ) : null}
+
+          {responseData?.answer ? (
+            <div className="answer-body">{responseData.answer}</div>
+          ) : null}
+
+          {responseData?.error ? (
+            <pre className="response-block error">{responseData.error}</pre>
+          ) : null}
+
+          {!responseData && !streamingText ? (
+            <p className="empty-copy">
+              La respuesta y los matches recuperados se muestran aca para revisar el comportamiento
+              del backend.
+            </p>
+          ) : null}
+        </article>
+
+        <article className="result-card matches-card">
+          <div className="section-head compact">
+            <div>
+              <p className="section-label">Recuperacion</p>
+              <h3>Fragmentos</h3>
+            </div>
+            <span className="counter">{previewMatches.length}</span>
+          </div>
+
+          {previewMatches.length ? (
+            <div className="match-list">
+              {previewMatches.map((match, index) => (
+                <div className="match-item" key={`${match.id || "match"}-${index}`}>
+                  <div className="match-meta">
+                    <span>Fragmento {index + 1}</span>
+                    <strong>
+                      {typeof match.similarity === "number"
+                        ? `${(match.similarity * 100).toFixed(1)}%`
+                        : "N/A"}
+                    </strong>
+                  </div>
+                  <p>{match.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-copy">
+              Cuando consultes, aca vas a ver los bloques recuperados desde Supabase.
+            </p>
+          )}
+        </article>
+      </section>
+    </div>
+  )
+}
+
+function TrainPage({ trainText, setTrainText, handleTrain, trainingStatus, responseData, fileRef }) {
+  return (
+    <div className="page-shell">
+      <section className="hero training-hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Ruta interna</p>
+          <h1>Entrenamiento multimodal.</h1>
+          <p className="hero-text">
+            Esta pagina no tiene acceso visible desde la home. Queda disponible como ruta directa
+            para operaciones de carga y futuras herramientas internas.
+          </p>
+        </div>
+        <div className="support-grid">
+          <span>Texto</span>
+          <span>Imagenes</span>
+          <span>Video</span>
+          <span>Audio</span>
+          <span>PDF</span>
+          <span>PPTX</span>
+          <span>Excel</span>
+        </div>
+      </section>
+
+      <section className="query-panel training-panel">
+        <div className="section-head">
+          <div>
+            <p className="section-label">Carga</p>
+            <h2>Agregar conocimiento</h2>
+          </div>
+          <StatusBadge status={trainingStatus} />
+        </div>
+
+        <form className="training-form" onSubmit={handleTrain}>
+          <label className="field">
+            <span>Texto</span>
+            <textarea
+              rows="8"
+              value={trainText}
+              onChange={(e) => setTrainText(e.target.value)}
+              placeholder="Pega contenido textual, notas, instrucciones o resumenes."
+            />
+          </label>
+
+          <label className="upload-zone">
+            <span className="upload-title">Archivos permitidos para la futura operacion</span>
+            <strong>PDF, imagenes, video, audio, PPTX y Excel</strong>
+            <small>En esta primera migracion de backend la ingestion activa sigue limitada a PDF.</small>
+            <input ref={fileRef} type="file" accept={TRAIN_ACCEPT} />
+          </label>
+
+          <button className="primary-button" type="submit">
+            Entrenar
+          </button>
+        </form>
+      </section>
+
+      <section className="result-card">
+        <div className="section-head compact">
+          <div>
+            <p className="section-label">Resultado</p>
+            <h3>Respuesta del backend</h3>
+          </div>
+        </div>
+
+        {responseData ? (
+          <pre className="response-block">{JSON.stringify(responseData, null, 2)}</pre>
+        ) : (
+          <p className="empty-copy">
+            El backend devuelve aca el detalle de chunks e inserciones para validar el pipeline.
+          </p>
+        )}
+      </section>
+    </div>
+  )
+}
 
 export default function App() {
-  const [trainText, setTrainText] = useState("")
+  const pathname = usePathname()
+  const isTrainingRoute = pathname === "/train"
   const fileRef = useRef(null)
+
+  const [trainText, setTrainText] = useState("")
   const [trainingStatus, setTrainingStatus] = useState(null)
 
   const [question, setQuestion] = useState("")
@@ -15,6 +241,7 @@ export default function App() {
   async function handleTrain(e) {
     e.preventDefault()
     setTrainingStatus("processing")
+    setResponseData(null)
 
     const form = new FormData()
     form.append("text", trainText)
@@ -27,13 +254,14 @@ export default function App() {
         body: form,
       })
 
+      const text = await res.text()
+      const payload = text ? JSON.parse(text) : null
+
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || "Error al entrenar")
+        throw new Error(payload?.error || "Error al entrenar")
       }
 
-      const json = await res.json()
-      setResponseData(json)
+      setResponseData(payload)
       setTrainingStatus("success")
     } catch (err) {
       console.error(err)
@@ -100,77 +328,38 @@ export default function App() {
   }
 
   return (
-    <div className="app-root">
-      <header>
-        <h1>RAG School - Cliente</h1>
+    <div className="app-shell">
+      <div className="grid-overlay" />
+      <header className="site-header">
+        <a className="logo" href="/">
+          RAG <span>School</span>
+          <em>core</em>
+        </a>
+        <div className="header-badge">
+          <span className="badge-dot" />
+          <span>{isTrainingRoute ? "Training route" : "Query route"}</span>
+        </div>
       </header>
 
-      <main>
-        <section className="panel">
-          <h2>Entrenamiento</h2>
-          <form onSubmit={handleTrain} className="form">
-            <label>
-              Texto:
-              <input
-                type="text"
-                value={trainText}
-                onChange={(e) => setTrainText(e.target.value)}
-                placeholder="Ingresa texto para entrenar"
-              />
-            </label>
-
-            <label>
-              Archivo (PDF):
-              <input type="file" ref={fileRef} accept=".pdf,application/pdf" />
-            </label>
-
-            <div className="actions">
-              <button type="submit">Enviar a /api/train</button>
-              {trainingStatus === "processing" && <span className="status">Procesando...</span>}
-              {trainingStatus === "success" && <span className="status success">Exito</span>}
-              {trainingStatus === "error" && <span className="status error">Error</span>}
-            </div>
-          </form>
-        </section>
-
-        <section className="panel">
-          <h2>Consulta</h2>
-          <form onSubmit={handleConsult} className="form">
-            <label>
-              Pregunta:
-              <input
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Haz una pregunta..."
-              />
-            </label>
-
-            <div className="actions">
-              <button type="submit">Enviar a /api/query</button>
-              {consultStatus === "processing" && <span className="status">Procesando...</span>}
-              {consultStatus === "error" && <span className="status error">Error</span>}
-            </div>
-          </form>
-
-          <div className="response">
-            <h3>Respuesta</h3>
-            {consultStatus === "processing" && streamingText && (
-              <pre className="stream">{streamingText}</pre>
-            )}
-
-            {responseData && (
-              <pre className="json">{JSON.stringify(responseData, null, 2)}</pre>
-            )}
-
-            {consultStatus === "done" && !responseData && streamingText && (
-              <pre className="stream">{streamingText}</pre>
-            )}
-          </div>
-        </section>
-      </main>
-
-      <footer>Backend local en {API_BASE_URL}</footer>
+      {isTrainingRoute ? (
+        <TrainPage
+          trainText={trainText}
+          setTrainText={setTrainText}
+          handleTrain={handleTrain}
+          trainingStatus={trainingStatus}
+          responseData={responseData}
+          fileRef={fileRef}
+        />
+      ) : (
+        <QueryPage
+          question={question}
+          setQuestion={setQuestion}
+          handleConsult={handleConsult}
+          consultStatus={consultStatus}
+          responseData={responseData}
+          streamingText={streamingText}
+        />
+      )}
     </div>
   )
 }
