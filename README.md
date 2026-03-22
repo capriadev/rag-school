@@ -1,48 +1,66 @@
 # RAG School
 
-Frontend client for a document-based RAG system oriented to educational use cases.
+RAG School is now a full application repository with:
+- a React + Vite client
+- a Node.js backend that replaces the previous `n8n` workflow logic
 
-This repository currently contains the React + Vite client used to:
-- send training content to an `n8n` workflow
-- upload PDF files for ingestion
-- query the knowledge base through a second `n8n` webhook
-- inspect the raw response returned by the orchestration layer
+The current goal is to keep the same functional flow in code:
+- train the knowledge base with plain text
+- train the knowledge base with PDF files
+- store embeddings in Supabase with `pgvector`
+- retrieve relevant chunks for a question
+- generate the final answer with Groq
 
-The backend/orchestration layer lives outside this repository and is based on:
-- `n8n` for workflow orchestration
-- `Supabase` + `pgvector` for vector storage
-- `Gemini Embeddings` for embedding generation
-- an LLM node for final answer generation
+## Current Architecture
 
-## Current Scope
+### Frontend
 
-This repo is the client layer only. It does not contain:
-- the exported n8n workflows
-- SQL migrations or Supabase schema files
-- environment variables for external services
+The frontend is a lightweight client used to:
+- submit text and PDF files for training
+- send user questions
+- display raw JSON responses during development
 
-Those artifacts should be added in the next commits as versioned workflow files.
+### Backend
 
-## Features
-
-- Manual training by plain text input
-- Manual training by file upload
-- Question submission to the RAG backend
-- Basic handling for JSON and streaming responses
-- Simple status feedback for training and querying
+The backend now owns the logic that previously lived in `n8n`:
+- request validation
+- PDF text extraction
+- chunking
+- embedding generation
+- Supabase inserts
+- semantic retrieval
+- final response generation
 
 ## Tech Stack
 
 - React `18.2.0`
-- React DOM `18.2.0`
 - Vite `^8.0.1`
+- Express `^5.2.1`
+- Supabase JS `^2.100.0`
+- Google GenAI SDK `^1.46.0`
+- Groq SDK `^1.1.1`
+- Multer for file uploads
+- pdf-parse for PDF ingestion
+
+## Environment Variables
+
+Create a local `.env` based on `.env.example`.
+
+Main variables:
+- `PORT`
+- `VITE_API_BASE_URL`
+- `GEMINI_API_KEY`
+- `GEMINI_EMBEDDING_MODEL`
+- `GEMINI_EMBEDDING_DIMENSION`
+- `GEMINI_LLM_MODEL`
+- `GROQ_API_KEY`
+- `GROQ_MODEL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_DOCUMENTS_TABLE`
+- `SUPABASE_MATCH_FUNCTION`
 
 ## Local Development
-
-Requirements:
-- Node.js 18+ recommended
-- npm
-- a running n8n instance reachable at `http://localhost:5678`
 
 Install dependencies:
 
@@ -50,39 +68,51 @@ Install dependencies:
 npm install
 ```
 
-Start development server:
+Run the frontend:
 
 ```bash
 npm run dev
 ```
 
-Build production bundle:
+Run the backend:
+
+```bash
+npm run server
+```
+
+For backend development with file watching:
+
+```bash
+npm run dev:server
+```
+
+Build the frontend:
 
 ```bash
 npm run build
 ```
 
-Preview the build:
+## API Endpoints
 
-```bash
-npm run preview
-```
+### `POST /api/train`
 
-## Expected Backend Endpoints
+Training endpoint for:
+- plain text via `text`
+- PDF via `file`
 
-The current client calls these endpoints directly:
+Request format:
+- `multipart/form-data`
 
-- `POST http://localhost:5678/webhook/entrenar`
-- `POST http://localhost:5678/webhook/consultar`
+Returns:
+- insertion status
+- number of generated chunks
+- number of inserted records
 
-Training request:
-- Sends `multipart/form-data`
-- Field `text` for plain text training
-- Field `file` for uploaded binary content
+### `POST /api/query`
 
-Consult request:
-- Sends `application/json`
-- Body shape:
+Query endpoint for semantic retrieval plus answer generation.
+
+Request body:
 
 ```json
 {
@@ -90,33 +120,30 @@ Consult request:
 }
 ```
 
-## Frontend Flow
-
-### Training
-
-1. User writes text and/or selects a file.
-2. The client builds a `FormData` payload.
-3. The payload is sent to `/webhook/entrenar`.
-4. The UI shows `processing`, `success`, or `error`.
-
-### Querying
-
-1. User submits a question.
-2. The client sends JSON to `/webhook/consultar`.
-3. If the response is streamed, chunks are appended live.
-4. If the response is JSON, the payload is rendered as formatted output.
+Returns:
+- generated answer
+- retrieved matches
 
 ## Project Structure
 
 ```text
 rag-school/
+|-- docs/
+|   |-- PROJECT_STRUCTURE.md
+|   `-- PROJECT_STRUCTURE.es.md
+|-- server/
+|   |-- config.js
+|   |-- index.js
+|   `-- services/
+|       |-- chunking.js
+|       |-- gemini.js
+|       |-- pdf.js
+|       `-- supabase.js
 |-- src/
 |   |-- App.jsx
 |   |-- main.jsx
 |   `-- styles.css
-|-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
+|-- .env.example
 |-- index.html
 |-- package.json
 |-- package-lock.json
@@ -124,37 +151,9 @@ rag-school/
 `-- README.es.md
 ```
 
-## File Overview
-
-- `src/App.jsx`: main UI, form handlers, webhook integration, response rendering.
-- `src/main.jsx`: React entry point.
-- `src/styles.css`: base visual styling for the client.
-- `docs/PROJECT_STRUCTURE.md`: structure and versioning guidance in English.
-- `docs/PROJECT_STRUCTURE.es.md`: structure and versioning guidance in Spanish.
-
-## Recommended Next Repository Additions
-
-To preserve workflow history cleanly, add a versioned folder structure like:
-
-```text
-workflows/
-|-- v1/
-|   |-- workflow.json
-|   `-- notes.md
-`-- v2/
-    |-- workflow.json
-    `-- notes.md
-```
-
-Suggested commit sequence:
-
-1. Commit documentation and current client structure.
-2. Add `workflows/v1` with the original workflow export.
-3. Commit `workflows/v2` with the current Supabase-based workflow.
-4. Continue with incremental improvements from that baseline.
-
 ## Notes
 
-- The client currently uses hardcoded local webhook URLs.
-- The current UI is intentionally minimal and oriented to workflow validation/debugging.
-- If workflow endpoints change, `src/App.jsx` must be updated accordingly.
+- This is the first backend migration away from `n8n`.
+- The current backend version supports PDF ingestion only for binary files.
+- Historical workflow exports should still be committed separately under versioned folders such as `workflows/v1` and `workflows/v2`.
+- Groq is the primary answer model and Gemini remains in use for embeddings.

@@ -1,18 +1,27 @@
 # Estructura del Proyecto
 
-Este documento describe la estructura actual del repositorio y la forma recomendada de guardar versiones del workflow.
+Este documento describe la estructura actual del repositorio despues de mover la logica principal fuera de `n8n` y llevarla a codigo.
 
 ## Estructura Actual del Repositorio
 
 ```text
 rag-school/
+|-- docs/
+|   |-- PROJECT_STRUCTURE.md
+|   `-- PROJECT_STRUCTURE.es.md
+|-- server/
+|   |-- config.js
+|   |-- index.js
+|   `-- services/
+|       |-- chunking.js
+|       |-- gemini.js
+|       |-- pdf.js
+|       `-- supabase.js
 |-- src/
 |   |-- App.jsx
 |   |-- main.jsx
 |   `-- styles.css
-|-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
+|-- .env.example
 |-- index.html
 |-- package.json
 |-- package-lock.json
@@ -22,14 +31,24 @@ rag-school/
 
 ## Responsabilidades del Frontend
 
-- Recibir texto y archivos de entrenamiento desde la UI
-- Enviar payloads de entrenamiento al webhook `entrenar`
-- Enviar preguntas al webhook `consultar`
-- Renderizar respuestas JSON o texto en streaming
+- Recibir texto y PDFs para entrenamiento
+- Enviar payloads de entrenamiento al backend
+- Enviar preguntas del usuario
+- Renderizar respuestas crudas orientadas a desarrollo
 
-## Versionado Recomendado de Workflows
+## Responsabilidades del Backend
 
-Cuando agregues exportaciones de n8n, conviene guardarlas por carpeta y no sobrescribir un único archivo.
+- Recibir requests de entrenamiento y consulta
+- Extraer texto desde archivos PDF
+- Fragmentar contenido en chunks
+- Generar embeddings con Gemini
+- Insertar vectores en Supabase
+- Consultar fragmentos relevantes desde Supabase
+- Generar respuestas finales
+
+## Almacenamiento Recomendado de Workflows Historicos
+
+Aunque la aplicacion ya no use `n8n` en runtime, conviene commitear los workflows viejos como referencia historica.
 
 Estructura recomendada:
 
@@ -38,55 +57,14 @@ workflows/
 |-- v1/
 |   |-- workflow.json
 |   `-- notes.md
-|-- v2/
-|   |-- workflow.json
-|   `-- notes.md
-`-- current/
-    `-- README.md
-```
-
-## Contenido Sugerido Para Cada Versión
-
-### `workflow.json`
-
-Archivo exportado de n8n para esa versión.
-
-### `notes.md`
-
-Conviene dejar una nota corta con:
-- propósito de la versión
-- nodos principales
-- modelo de almacenamiento usado
-- limitaciones conocidas
-- notas de migración hacia la siguiente versión
-
-Plantilla sugerida:
-
-```md
-# Workflow vX
-
-## Propósito
-
-Descripción breve.
-
-## Componentes Principales
-
-- Webhook de entrenamiento
-- Webhook de consulta
-- Proveedor de embeddings
-- Vector store
-- LLM
-
-## Notas
-
-- Detalle importante de implementación
-- Limitación conocida
-- Motivo de migración a la siguiente versión
+`-- v2/
+    |-- workflow.json
+    `-- notes.md
 ```
 
 ## Plan de Commits Sugerido
 
-1. Commit de documentación del proyecto.
-2. Agregar `workflows/v1`.
-3. Agregar `workflows/v2`.
-4. Continuar el desarrollo de mejoras desde esa base.
+1. Commit de documentacion y estructura actual de la app.
+2. Commit de `workflows/v1` como baseline original.
+3. Commit de `workflows/v2` como ultimo workflow antes de la migracion al backend.
+4. Continuar mejoras de backend y UI desde esa base.

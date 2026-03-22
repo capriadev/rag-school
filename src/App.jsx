@@ -1,14 +1,16 @@
-import React, { useState, useRef } from "react"
+import React, { useRef, useState } from "react"
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001"
 
 export default function App() {
   const [trainText, setTrainText] = useState("")
   const fileRef = useRef(null)
-  const [trainingStatus, setTrainingStatus] = useState(null) // null | "processing" | "success" | "error"
+  const [trainingStatus, setTrainingStatus] = useState(null)
 
   const [question, setQuestion] = useState("")
   const [responseData, setResponseData] = useState(null)
   const [streamingText, setStreamingText] = useState("")
-  const [consultStatus, setConsultStatus] = useState(null) // null | "processing" | "done" | "error"
+  const [consultStatus, setConsultStatus] = useState(null)
 
   async function handleTrain(e) {
     e.preventDefault()
@@ -20,16 +22,23 @@ export default function App() {
     if (file) form.append("file", file)
 
     try {
-      const res = await fetch("http://localhost:5678/webhook/entrenar", {
+      const res = await fetch(`${API_BASE_URL}/api/train`, {
         method: "POST",
-        body: form
+        body: form,
       })
 
-      if (!res.ok) throw new Error("Error en webhook")
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || "Error al entrenar")
+      }
+
+      const json = await res.json()
+      setResponseData(json)
       setTrainingStatus("success")
     } catch (err) {
       console.error(err)
       setTrainingStatus("error")
+      setResponseData({ error: err.message })
     }
   }
 
@@ -40,44 +49,47 @@ export default function App() {
     setConsultStatus("processing")
 
     try {
-      const res = await fetch("http://localhost:5678/webhook/consultar", {
+      const res = await fetch(`${API_BASE_URL}/api/query`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question }),
       })
 
       if (!res.ok) {
         const txt = await res.text()
-        throw new Error(txt || "Error en webhook consultar")
+        throw new Error(txt || "Error al consultar")
       }
 
       const ct = res.headers.get("content-type") || ""
 
       if (ct.includes("text/event-stream") || ct.includes("event-stream")) {
-        // streaming response: leer por stream
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let done = false
+
         while (!done) {
           const { value, done: d } = await reader.read()
           done = d
+
           if (value) {
             const chunk = decoder.decode(value)
             setStreamingText((s) => s + chunk)
           }
         }
+
         setConsultStatus("done")
       } else {
-        // intentar JSON, si no, texto
         const text = await res.text()
+
         try {
           const json = JSON.parse(text)
           setResponseData(json)
-        } catch (e) {
+        } catch {
           setResponseData({ text })
         }
+
         setConsultStatus("done")
       }
     } catch (err) {
@@ -90,7 +102,7 @@ export default function App() {
   return (
     <div className="app-root">
       <header>
-        <h1>RAG School — Cliente</h1>
+        <h1>RAG School - Cliente</h1>
       </header>
 
       <main>
@@ -108,14 +120,14 @@ export default function App() {
             </label>
 
             <label>
-              Archivo (PDF / imagen / video):
-              <input type="file" ref={fileRef} accept=".pdf,image/*,video/*" />
+              Archivo (PDF):
+              <input type="file" ref={fileRef} accept=".pdf,application/pdf" />
             </label>
 
             <div className="actions">
-              <button type="submit">Enviar a /entrenar</button>
+              <button type="submit">Enviar a /api/train</button>
               {trainingStatus === "processing" && <span className="status">Procesando...</span>}
-              {trainingStatus === "success" && <span className="status success">Éxito</span>}
+              {trainingStatus === "success" && <span className="status success">Exito</span>}
               {trainingStatus === "error" && <span className="status error">Error</span>}
             </div>
           </form>
@@ -135,7 +147,7 @@ export default function App() {
             </label>
 
             <div className="actions">
-              <button type="submit">Enviar a /consultar</button>
+              <button type="submit">Enviar a /api/query</button>
               {consultStatus === "processing" && <span className="status">Procesando...</span>}
               {consultStatus === "error" && <span className="status error">Error</span>}
             </div>
@@ -158,7 +170,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer>Conecta n8n en http://localhost:5678/webhook-test/entrenar y /consultar</footer>
+      <footer>Backend local en {API_BASE_URL}</footer>
     </div>
   )
 }
