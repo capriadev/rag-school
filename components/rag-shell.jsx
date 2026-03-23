@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3101"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
 
 function StatusBadge({ status }) {
