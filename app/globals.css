@@ -1,0 +1,38 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #0a0a0f;
+  color: #ececf7;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  padding: 40px 24px;
+}
+
+.migration-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  border: 1px solid #2a2a3a;
+  border-radius: 24px;
+  background: rgba(17, 17, 24, 0.92);
+  padding: 32px;
+}
+
+.migration-shell h1 {
+  margin: 0 0 12px;
+}
+
+.migration-shell p {
+  color: #a0a0bd;
+  line-height: 1.7;
+}
