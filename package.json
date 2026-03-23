@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "next dev",
     "dev:server": "node --watch server/index.js",
-    "build": "vite build",
-    "preview": "vite preview",
+    "build": "next build",
+    "start": "next start",
     "server": "node server/index.js",
-    "next:dev": "next dev",
-    "next:build": "next build",
-    "next:start": "next start"
+    "legacy:dev": "vite",
+    "legacy:build": "vite build",
+    "legacy:preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.46.0",
