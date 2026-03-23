@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3101"
 const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
 
 function usePathname() {

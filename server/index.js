@@ -10,8 +10,13 @@ import { insertDocuments, matchDocuments } from "./services/supabase.js"
 
 const app = express()
 const upload = multer({ storage: multer.memoryStorage() })
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+}
 
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(express.json({ limit: "2mb" }))
 
 app.get("/api/health", (_req, res) => {
