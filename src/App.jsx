@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3101"
 const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
@@ -36,10 +37,10 @@ function QueryPage({ question, setQuestion, handleConsult, consultStatus, respon
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Consulta semantica</p>
-          <h1>Pregunta a tu base de conocimiento.</h1>
+          <h1>Explora la base de conocimiento.</h1>
           <p className="hero-text">
-            La pantalla inicial queda enfocada en consultas. Entrenamiento vive en una ruta
-            separada para la operacion interna del sistema.
+            Recupera contexto relevante y genera respuestas sobre el material ya incorporado al
+            sistema.
           </p>
         </div>
         <div className="hero-meta">
@@ -61,7 +62,7 @@ function QueryPage({ question, setQuestion, handleConsult, consultStatus, respon
       <section className="query-panel">
         <div className="section-head">
           <div>
-            <p className="section-label">Ruta principal</p>
+            <p className="section-label">Consulta</p>
             <h2>Buscar respuesta</h2>
           </div>
           <StatusBadge status={consultStatus} />
@@ -70,62 +71,34 @@ function QueryPage({ question, setQuestion, handleConsult, consultStatus, respon
         <form className="query-form" onSubmit={handleConsult}>
           <label className="field">
             <span>Pregunta</span>
-            <input
-              type="text"
+            <textarea
+              rows="4"
+              maxLength="700"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ej: Que permisos tiene un administrador?"
+              placeholder="Escribe una consulta con el mayor contexto posible para obtener mejores resultados."
             />
+            <small className="field-help">{question.length}/700</small>
           </label>
 
           <button className="primary-button" type="submit">
             Consultar
           </button>
         </form>
-      </section>
 
-      <section className="results-grid">
-        <article className="result-card answer-card">
-          <div className="section-head compact">
-            <div>
-              <p className="section-label">Salida</p>
-              <h3>Respuesta</h3>
-            </div>
-          </div>
-
-          {consultStatus === "processing" && streamingText ? (
-            <pre className="response-block accent">{streamingText}</pre>
-          ) : null}
-
-          {responseData?.answer ? (
-            <div className="answer-body">{responseData.answer}</div>
-          ) : null}
-
-          {responseData?.error ? (
-            <pre className="response-block error">{responseData.error}</pre>
-          ) : null}
-
-          {!responseData && !streamingText ? (
-            <p className="empty-copy">
-              La respuesta y los matches recuperados se muestran aca para revisar el comportamiento
-              del backend.
-            </p>
-          ) : null}
-        </article>
-
-        <article className="result-card matches-card">
+        <div className="inline-fragments">
           <div className="section-head compact">
             <div>
               <p className="section-label">Recuperacion</p>
-              <h3>Fragmentos</h3>
+              <h3>Fragmentos relevantes</h3>
             </div>
             <span className="counter">{previewMatches.length}</span>
           </div>
 
           {previewMatches.length ? (
-            <div className="match-list">
+            <div className="match-list compact-list">
               {previewMatches.map((match, index) => (
-                <div className="match-item" key={`${match.id || "match"}-${index}`}>
+                <div className="match-item compact-item" key={`${match.id || "match"}-${index}`}>
                   <div className="match-meta">
                     <span>Fragmento {index + 1}</span>
                     <strong>
@@ -140,25 +113,63 @@ function QueryPage({ question, setQuestion, handleConsult, consultStatus, respon
             </div>
           ) : (
             <p className="empty-copy">
-              Cuando consultes, aca vas a ver los bloques recuperados desde Supabase.
+              Los fragmentos recuperados apareceran aca junto al formulario de consulta.
             </p>
           )}
-        </article>
+        </div>
+      </section>
+
+      <section className="result-card answer-card wide-card">
+        <div className="section-head compact">
+          <div>
+            <p className="section-label">Salida</p>
+            <h3>Respuesta</h3>
+          </div>
+        </div>
+
+        {consultStatus === "processing" && streamingText ? (
+          <pre className="response-block accent">{streamingText}</pre>
+        ) : null}
+
+        {responseData?.answer ? (
+          <div className="answer-body markdown-body">
+            <ReactMarkdown>{responseData.answer}</ReactMarkdown>
+          </div>
+        ) : null}
+
+        {responseData?.error ? (
+          <pre className="response-block error">{responseData.error}</pre>
+        ) : null}
+
+        {!responseData && !streamingText ? (
+          <p className="empty-copy">
+            La respuesta final se renderiza en markdown para que listas, enfasis y estructura se
+            vean bien.
+          </p>
+        ) : null}
       </section>
     </div>
   )
 }
 
-function TrainPage({ trainText, setTrainText, handleTrain, trainingStatus, responseData, fileRef }) {
+function TrainPage({
+  trainText,
+  setTrainText,
+  handleTrain,
+  trainingStatus,
+  responseData,
+  fileRef,
+  selectedFileName,
+}) {
   return (
     <div className="page-shell">
       <section className="hero training-hero">
         <div className="hero-copy">
-          <p className="eyebrow">Ruta interna</p>
-          <h1>Entrenamiento multimodal.</h1>
+          <p className="eyebrow">Entrenamiento</p>
+          <h1>Incorpora nuevas fuentes.</h1>
           <p className="hero-text">
-            Esta pagina no tiene acceso visible desde la home. Queda disponible como ruta directa
-            para operaciones de carga y futuras herramientas internas.
+            Carga texto o documentos para ampliar la base de conocimiento y mantener el sistema
+            actualizado.
           </p>
         </div>
         <div className="support-grid">
@@ -185,7 +196,7 @@ function TrainPage({ trainText, setTrainText, handleTrain, trainingStatus, respo
           <label className="field">
             <span>Texto</span>
             <textarea
-              rows="8"
+              rows="10"
               value={trainText}
               onChange={(e) => setTrainText(e.target.value)}
               placeholder="Pega contenido textual, notas, instrucciones o resumenes."
@@ -193,10 +204,23 @@ function TrainPage({ trainText, setTrainText, handleTrain, trainingStatus, respo
           </label>
 
           <label className="upload-zone">
-            <span className="upload-title">Archivos permitidos para la futura operacion</span>
-            <strong>PDF, imagenes, video, audio, PPTX y Excel</strong>
-            <small>En esta primera migracion de backend la ingestion activa sigue limitada a PDF.</small>
+            <span className="upload-title">Archivos</span>
+            <strong>Arrastra o selecciona material para entrenar</strong>
+            <small>
+              Preparado visualmente para PDF, imagenes, video, audio, PPTX y Excel. La ingestión
+              binaria activa del backend sigue limitada a PDF en esta etapa.
+            </small>
+            <span className="upload-chip-row">
+              <span className="upload-chip">PDF</span>
+              <span className="upload-chip">Imagenes</span>
+              <span className="upload-chip">Video</span>
+              <span className="upload-chip">Audio</span>
+              <span className="upload-chip">PPTX</span>
+              <span className="upload-chip">Excel</span>
+            </span>
+            <span className="file-trigger">Seleccionar archivo</span>
             <input ref={fileRef} type="file" accept={TRAIN_ACCEPT} />
+            <span className="file-name">{selectedFileName || "Ningun archivo seleccionado"}</span>
           </label>
 
           <button className="primary-button" type="submit">
@@ -205,7 +229,7 @@ function TrainPage({ trainText, setTrainText, handleTrain, trainingStatus, respo
         </form>
       </section>
 
-      <section className="result-card">
+      <section className="result-card wide-card">
         <div className="section-head compact">
           <div>
             <p className="section-label">Resultado</p>
@@ -237,6 +261,7 @@ export default function App() {
   const [responseData, setResponseData] = useState(null)
   const [streamingText, setStreamingText] = useState("")
   const [consultStatus, setConsultStatus] = useState(null)
+  const [selectedFileName, setSelectedFileName] = useState("")
 
   async function handleTrain(e) {
     e.preventDefault()
@@ -290,42 +315,34 @@ export default function App() {
         throw new Error(txt || "Error al consultar")
       }
 
-      const ct = res.headers.get("content-type") || ""
+      const text = await res.text()
 
-      if (ct.includes("text/event-stream") || ct.includes("event-stream")) {
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let done = false
-
-        while (!done) {
-          const { value, done: d } = await reader.read()
-          done = d
-
-          if (value) {
-            const chunk = decoder.decode(value)
-            setStreamingText((s) => s + chunk)
-          }
-        }
-
-        setConsultStatus("done")
-      } else {
-        const text = await res.text()
-
-        try {
-          const json = JSON.parse(text)
-          setResponseData(json)
-        } catch {
-          setResponseData({ text })
-        }
-
-        setConsultStatus("done")
+      try {
+        const json = JSON.parse(text)
+        setResponseData(json)
+      } catch {
+        setResponseData({ text })
       }
+
+      setConsultStatus("done")
     } catch (err) {
       console.error(err)
       setConsultStatus("error")
       setResponseData({ error: err.message })
     }
   }
+
+  useEffect(() => {
+    const input = fileRef.current
+    if (!input) return undefined
+
+    const handleChange = () => {
+      setSelectedFileName(input.files?.[0]?.name || "")
+    }
+
+    input.addEventListener("change", handleChange)
+    return () => input.removeEventListener("change", handleChange)
+  }, [isTrainingRoute])
 
   return (
     <div className="app-shell">
@@ -337,7 +354,7 @@ export default function App() {
         </a>
         <div className="header-badge">
           <span className="badge-dot" />
-          <span>{isTrainingRoute ? "Training route" : "Query route"}</span>
+          <span>{isTrainingRoute ? "Training" : "Query"}</span>
         </div>
       </header>
 
@@ -349,6 +366,7 @@ export default function App() {
           trainingStatus={trainingStatus}
           responseData={responseData}
           fileRef={fileRef}
+          selectedFileName={selectedFileName}
         />
       ) : (
         <QueryPage
