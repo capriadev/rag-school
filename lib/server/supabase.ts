@@ -121,3 +121,16 @@ export async function getVectorStoreMetrics(): Promise<VectorStoreMetrics> {
 export async function exportVectorStoreSnapshot(): Promise<VectorDocumentRow[]> {
   return listDocuments(true)
 }
+
+export async function pingVectorStore(): Promise<{ reachable: boolean; rowsChecked: number }> {
+  const { data, error } = await supabase.from(config.documentsTable).select("id").limit(1)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    reachable: true,
+    rowsChecked: data?.length || 0,
+  }
+}
