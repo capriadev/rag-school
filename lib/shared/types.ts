@@ -6,7 +6,15 @@ export interface ChunkOptions {
 }
 
 export interface SourceInput {
-  sourceType: "text" | "pdf"
+  sourceType:
+    | "text"
+    | "pdf"
+    | "csv"
+    | "spreadsheet"
+    | "presentation"
+    | "image"
+    | "audio"
+    | "video"
   sourceName: string
   content: string
 }
@@ -46,5 +54,6 @@ export interface TrainResponse {
   success?: boolean
   inserted?: number
   chunks?: number
+  sources?: number
   error?: string
 }

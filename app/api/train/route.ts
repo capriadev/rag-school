@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { chunkText } from "../../../lib/server/chunking"
 import { embedTexts } from "../../../lib/server/embeddings"
-import { extractPdfText } from "../../../lib/server/pdf"
+import { extractSourceFromFile } from "../../../lib/server/ingestion"
 import { insertDocuments } from "../../../lib/server/supabase"
 import type { InsertDocument, SourceInput } from "../../../lib/shared/types"
 
@@ -23,41 +23,26 @@ export async function POST(request: Request) {
     }
 
     if (file instanceof File) {
-      if (file.type !== "application/pdf") {
+      const extractedSource = await extractSourceFromFile(file)
+
+      if (!extractedSource.content.trim()) {
         return NextResponse.json(
           {
             success: false,
-            error: "Solo PDF esta soportado en esta primera migracion.",
+            error: `No se pudo extraer contenido util del archivo ${file.name}.`,
           },
           { status: 400 },
         )
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const pdfText = await extractPdfText(buffer)
-
-      if (!pdfText) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "No se pudo extraer texto del PDF.",
-          },
-          { status: 400 },
-        )
-      }
-
-      sources.push({
-        sourceType: "pdf",
-        sourceName: file.name,
-        content: pdfText,
-      })
+      sources.push(extractedSource)
     }
 
     if (!sources.length) {
       return NextResponse.json(
         {
           success: false,
-          error: "Debes enviar texto o un archivo PDF.",
+          error: "Debes enviar texto o un archivo soportado.",
         },
         { status: 400 },
       )
@@ -108,6 +93,7 @@ export async function POST(request: Request) {
       success: true,
       inserted: result.inserted,
       chunks: documents.length,
+      sources: sources.length,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Training failed"
