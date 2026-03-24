@@ -57,3 +57,23 @@ export interface TrainResponse {
   sources?: number
   error?: string
 }
+
+export interface VectorStoreMetrics {
+  estimatedStorageBytes: number
+  totalChunks: number
+  uniqueSources: number
+  sourceTypes: Record<string, number>
+}
+
+export interface TrainMetricsResponse {
+  success?: boolean
+  metrics?: VectorStoreMetrics
+  error?: string
+}
+
+export interface VectorDocumentRow {
+  id: number | string
+  content: string
+  metadata?: Record<string, unknown> | null
+  embedding?: unknown
+}

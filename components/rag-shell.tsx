@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { CHUNK_OPTIONS, DEFAULT_CHUNK_COUNT } from "../lib/shared/llm"
 import type { ChangeEvent, FormEvent, MutableRefObject } from "react"
-import type { QueryResponse, Status, TrainResponse } from "../lib/shared/types"
+import type { QueryResponse, Status, TrainMetricsResponse, TrainResponse, VectorStoreMetrics } from "../lib/shared/types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const TRAIN_ACCEPT = ".pdf,.pptx,.xls,.xlsx,.ods,.csv,image/*,video/*,audio/*"
@@ -195,8 +195,15 @@ interface TrainPageProps {
   handleTrain: (event: FormEvent<HTMLFormElement>) => Promise<void>
   trainingStatus: Status
   responseData: TrainResponse | QueryResponse | null
+  metrics: VectorStoreMetrics | null
+  metricsStatus: Status
+  handleDownloadSnapshot: () => Promise<void>
   fileRef: MutableRefObject<HTMLInputElement | null>
   selectedFileName: string
+}
+
+function formatMegabytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
 function TrainPage({
@@ -205,6 +212,9 @@ function TrainPage({
   handleTrain,
   trainingStatus,
   responseData,
+  metrics,
+  metricsStatus,
+  handleDownloadSnapshot,
   fileRef,
   selectedFileName,
 }: TrainPageProps) {
@@ -228,6 +238,52 @@ function TrainPage({
           <span>PPTX</span>
           <span>Excel</span>
           <span>CSV</span>
+        </div>
+      </section>
+
+      <section className="result-card metrics-card">
+        <div className="section-head compact">
+          <div>
+            <p className="section-label">Metricas</p>
+            <h3>Estado del vector store</h3>
+          </div>
+          <StatusBadge status={metricsStatus} />
+        </div>
+
+        <div className="metrics-grid">
+          <div className="metric-box">
+            <span>Espacio estimado</span>
+            <strong>{metrics ? formatMegabytes(metrics.estimatedStorageBytes) : "--"}</strong>
+          </div>
+          <div className="metric-box">
+            <span>Chunks guardados</span>
+            <strong>{metrics?.totalChunks ?? "--"}</strong>
+          </div>
+          <div className="metric-box">
+            <span>Fuentes unicas</span>
+            <strong>{metrics?.uniqueSources ?? "--"}</strong>
+          </div>
+        </div>
+
+        <div className="metrics-footer">
+          <div className="metrics-breakdown">
+            <span className="section-label">Tipos</span>
+            <div className="upload-chip-row">
+              {metrics && Object.keys(metrics.sourceTypes).length ? (
+                Object.entries(metrics.sourceTypes).map(([sourceType, count]) => (
+                  <span className="upload-chip" key={sourceType}>
+                    {sourceType}: {count}
+                  </span>
+                ))
+              ) : (
+                <span className="upload-chip">Sin datos</span>
+              )}
+            </div>
+          </div>
+
+          <button className="secondary-button" type="button" onClick={handleDownloadSnapshot}>
+            Descargar snapshot
+          </button>
         </div>
       </section>
 
@@ -316,6 +372,57 @@ export function RagShell({ mode }: RagShellProps) {
   const [streamingText, setStreamingText] = useState("")
   const [consultStatus, setConsultStatus] = useState<Status>(null)
   const [selectedFileName, setSelectedFileName] = useState("")
+  const [metrics, setMetrics] = useState<VectorStoreMetrics | null>(null)
+  const [metricsStatus, setMetricsStatus] = useState<Status>(null)
+
+  async function loadTrainMetrics() {
+    setMetricsStatus("processing")
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/train/metrics`)
+      const text = await response.text()
+      const payload = parseResponsePayload<TrainMetricsResponse>(text)
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "No se pudieron cargar las metricas")
+      }
+
+      setMetrics(payload?.metrics || null)
+      setMetricsStatus("success")
+    } catch (error) {
+      console.error(error)
+      setMetricsStatus("error")
+    }
+  }
+
+  async function handleDownloadSnapshot() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/train/export`)
+
+      if (!response.ok) {
+        const text = await response.text()
+        throw new Error(text || "No se pudo descargar el snapshot")
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      const disposition = response.headers.get("Content-Disposition") || ""
+      const fileNameMatch = disposition.match(/filename="(.+)"/)
+
+      anchor.href = downloadUrl
+      anchor.download = fileNameMatch?.[1] || "vector-store.json"
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(downloadUrl)
+    } catch (error) {
+      console.error(error)
+      setResponseData({
+        error: error instanceof Error ? error.message : "No se pudo descargar el snapshot",
+      })
+    }
+  }
 
   async function handleTrain(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -342,6 +449,7 @@ export function RagShell({ mode }: RagShellProps) {
 
       setResponseData(payload)
       setTrainingStatus("success")
+      void loadTrainMetrics()
     } catch (err) {
       console.error(err)
       setTrainingStatus("error")
@@ -391,6 +499,12 @@ export function RagShell({ mode }: RagShellProps) {
   }
 
   useEffect(() => {
+    if (!isTrainingRoute) {
+      return undefined
+    }
+
+    void loadTrainMetrics()
+
     const input = fileRef.current
     if (!input) return undefined
 
@@ -423,6 +537,9 @@ export function RagShell({ mode }: RagShellProps) {
           handleTrain={handleTrain}
           trainingStatus={trainingStatus}
           responseData={responseData}
+          metrics={metrics}
+          metricsStatus={metricsStatus}
+          handleDownloadSnapshot={handleDownloadSnapshot}
           fileRef={fileRef}
           selectedFileName={selectedFileName}
         />

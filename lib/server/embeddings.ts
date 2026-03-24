@@ -1,8 +1,8 @@
 import { GoogleGenAI } from "@google/genai"
 import { config } from "./config"
 
-const GEMINI_EMBEDDING_MODEL = "models/gemini-embedding-2-preview"
-const GEMINI_EMBEDDING_DIMENSION = 3072
+export const GEMINI_EMBEDDING_MODEL = "models/gemini-embedding-2-preview"
+export const GEMINI_EMBEDDING_DIMENSION = 3072
 
 const geminiClients = config.geminiApiKeys.map((apiKey) => new GoogleGenAI({ apiKey }))
 

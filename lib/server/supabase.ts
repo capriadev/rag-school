@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { config } from "./config"
-import type { InsertDocument, MatchDocument } from "../shared/types"
+import { GEMINI_EMBEDDING_DIMENSION } from "./embeddings"
+import type { InsertDocument, MatchDocument, VectorDocumentRow, VectorStoreMetrics } from "../shared/types"
 
 const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
   auth: {
@@ -11,6 +12,43 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey,
 
 function toPgVector(values: number[]): string {
   return `[${values.join(",")}]`
+}
+
+function estimateRowBytes(row: VectorDocumentRow): number {
+  const contentBytes = Buffer.byteLength(row.content || "", "utf8")
+  const metadataBytes = Buffer.byteLength(JSON.stringify(row.metadata || {}), "utf8")
+  const embeddingBytes = GEMINI_EMBEDDING_DIMENSION * 4
+
+  return contentBytes + metadataBytes + embeddingBytes
+}
+
+async function listDocuments(includeEmbedding: boolean): Promise<VectorDocumentRow[]> {
+  const rows: VectorDocumentRow[] = []
+  const pageSize = 1000
+  let from = 0
+
+  while (true) {
+    const selectClause = includeEmbedding ? "id, content, metadata, embedding" : "id, content, metadata"
+    const { data, error } = await supabase
+      .from(config.documentsTable)
+      .select(selectClause)
+      .range(from, from + pageSize - 1)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    const page = ((data || []) as unknown) as VectorDocumentRow[]
+    rows.push(...page)
+
+    if (page.length < pageSize) {
+      break
+    }
+
+    from += pageSize
+  }
+
+  return rows
 }
 
 export async function insertDocuments(documents: InsertDocument[]): Promise<{ inserted: number }> {
@@ -51,4 +89,35 @@ export async function matchDocuments({
   }
 
   return data || []
+}
+
+export async function getVectorStoreMetrics(): Promise<VectorStoreMetrics> {
+  const rows = await listDocuments(false)
+  const uniqueSources = new Set<string>()
+  const sourceTypes: Record<string, number> = {}
+  let estimatedStorageBytes = 0
+
+  for (const row of rows) {
+    estimatedStorageBytes += estimateRowBytes(row)
+
+    const sourceName = typeof row.metadata?.sourceName === "string" ? row.metadata.sourceName : ""
+    const sourceType = typeof row.metadata?.sourceType === "string" ? row.metadata.sourceType : "unknown"
+
+    if (sourceName) {
+      uniqueSources.add(sourceName)
+    }
+
+    sourceTypes[sourceType] = (sourceTypes[sourceType] || 0) + 1
+  }
+
+  return {
+    estimatedStorageBytes,
+    totalChunks: rows.length,
+    uniqueSources: uniqueSources.size,
+    sourceTypes,
+  }
+}
+
+export async function exportVectorStoreSnapshot(): Promise<VectorDocumentRow[]> {
+  return listDocuments(true)
 }
