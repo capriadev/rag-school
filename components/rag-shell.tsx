@@ -7,7 +7,7 @@ import type { ChangeEvent, FormEvent, MutableRefObject } from "react"
 import type { QueryResponse, Status, TrainResponse } from "../lib/shared/types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
-const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
+const TRAIN_ACCEPT = ".pdf,.pptx,.xls,.xlsx,.ods,.csv,image/*,video/*,audio/*"
 
 interface StatusBadgeProps {
   status: Status
@@ -255,8 +255,8 @@ function TrainPage({
             <span className="upload-title">Archivos</span>
             <strong>Arrastra o selecciona material para entrenar</strong>
             <small>
-              Preparado visualmente para PDF, imagenes, video, audio, PPTX y Excel. La ingestion
-              binaria activa del backend sigue limitada a PDF en esta etapa.
+              El backend ya procesa texto, PDF, imagenes, audio, video, PPTX, CSV y Excel. En
+              multimedia, Gemini extrae texto o contexto util para indexacion.
             </small>
             <span className="upload-chip-row">
               <span className="upload-chip">PDF</span>
