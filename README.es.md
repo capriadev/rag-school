@@ -1,64 +1,74 @@
 # RAG School
 
-RAG School ahora es un repositorio de aplicacion completo con:
-- un cliente en React + Vite
-- un backend en Node.js que reemplaza la logica anterior de `n8n`
+RAG School es una aplicacion en Next.js para entrenar y consultar un vector store en Supabase.
 
-La meta actual es conservar el mismo flujo funcional en codigo:
-- entrenar la base de conocimiento con texto plano
-- entrenar la base de conocimiento con archivos PDF
-- guardar embeddings en Supabase con `pgvector`
-- recuperar fragmentos relevantes para una pregunta
-- generar la respuesta final con Groq
+Reemplaza el workflow anterior de n8n con codigo de aplicacion para:
+- ingestion y chunking
+- generacion de embeddings con Gemini
+- recuperacion semantica desde Supabase pgvector
+- generacion final de respuestas con Groq
 
-## Arquitectura Actual
+## Stack Actual
 
-### Frontend
+- Next.js App Router
+- React 18
+- TypeScript
+- Supabase JS
+- Google GenAI SDK
+- Groq SDK
+- `pdf-parse`
+- `xlsx`
+- `jszip`
 
-El frontend es un cliente liviano que se usa para:
-- enviar texto y PDFs para entrenamiento
-- enviar preguntas del usuario
-- mostrar respuestas JSON crudas durante desarrollo
+## Que Hace La App
 
-### Backend
+### Flujo de consulta
 
-El backend ahora se encarga de la logica que antes vivia en `n8n`:
-- validacion de requests
-- extraccion de texto desde PDF
-- chunking
-- generacion de embeddings
-- inserciones en Supabase
-- recuperacion semantica
-- generacion de respuesta final
+- recibe una pregunta del usuario
+- recupera una cantidad configurable de fragmentos desde Supabase
+- elige el modelo de Groq segun la cantidad de chunks
+- rota entre API keys de Groq y modelos fallback
+- devuelve la respuesta final mas los matches recuperados
 
-## Stack Tecnologico
+### Flujo de entrenamiento
 
-- React `18.2.0`
-- Vite `^8.0.1`
-- Express `^5.2.1`
-- Supabase JS `^2.100.0`
-- Google GenAI SDK `^1.46.0`
-- Groq SDK `^1.1.1`
-- Multer para upload de archivos
-- pdf-parse para ingestion de PDF
+- acepta texto manual
+- acepta archivos para ingestion
+- extrae texto o contexto semantico
+- divide el contenido en chunks
+- genera embeddings con Gemini
+- guarda vectores en Supabase
+
+Tipos de archivo soportados:
+- texto
+- PDF
+- CSV
+- Excel: `xls`, `xlsx`, `ods`
+- PowerPoint: `pptx`
+- imagen
+- audio
+- video
+
+Notas:
+- la extraccion de imagen/audio/video usa Gemini multimodal
+- el formato binario viejo `ppt` no esta soportado
+- el entrenamiento actualmente acepta un archivo por request
 
 ## Variables de Entorno
 
-Crea un `.env` local a partir de `.env.example`.
+Crea `.env` a partir de `.env.example`.
 
-Variables principales:
-- `PORT`
-- `VITE_API_BASE_URL`
-- `GEMINI_API_KEY`
-- `GEMINI_EMBEDDING_MODEL`
-- `GEMINI_EMBEDDING_DIMENSION`
-- `GEMINI_LLM_MODEL`
-- `GROQ_API_KEY`
-- `GROQ_MODEL`
+Variables requeridas:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_DOCUMENTS_TABLE`
 - `SUPABASE_MATCH_FUNCTION`
+- `GEMINI_API_KEY`
+- `GEMINI_API_KEY_2` opcional
+- `GEMINI_API_KEY_3` opcional
+- `GROQ_API_KEY`
+- `GROQ_API_KEY_2` opcional
+- `GROQ_API_KEY_3` opcional
 
 ## Desarrollo Local
 
@@ -68,92 +78,118 @@ Instalar dependencias:
 npm install
 ```
 
-Levantar el frontend:
+Levantar la app:
 
 ```bash
 npm run dev
 ```
 
-Levantar el backend:
-
-```bash
-npm run server
-```
-
-Para desarrollo del backend con watch:
-
-```bash
-npm run dev:server
-```
-
-Compilar el frontend:
+Compilar produccion:
 
 ```bash
 npm run build
 ```
 
-## Endpoints de API
+Levantar produccion:
+
+```bash
+npm run start
+```
+
+La app usa un unico runtime de Next.js. Frontend y backend ya no se levantan por separado.
+
+## Rutas API
 
 ### `POST /api/train`
 
-Endpoint de entrenamiento para:
-- texto plano via `text`
-- PDF via `file`
+Endpoint multipart para entrenamiento.
 
-Formato del request:
-- `multipart/form-data`
+Entradas:
+- `text`
+- `file`
 
 Devuelve:
-- estado de insercion
+- registros insertados
 - cantidad de chunks generados
-- cantidad de registros insertados
+- cantidad de fuentes procesadas
+
+### `GET /api/train/metrics`
+
+Devuelve metricas del vector store:
+- uso estimado de almacenamiento
+- chunks totales
+- fuentes unicas
+- desglose por tipo de fuente
+
+### `GET /api/train/export`
+
+Descarga un snapshot JSON de la tabla actual del vector store.
 
 ### `POST /api/query`
 
-Endpoint de consulta para recuperacion semantica mas generacion de respuesta.
+Endpoint JSON de consulta.
 
-Body del request:
+Ejemplo de body:
 
 ```json
 {
-  "question": "Que dice el documento sobre roles de usuario?"
+  "question": "Que dice el material sobre roles de usuario?",
+  "chunkCount": 5
 }
 ```
 
-Devuelve:
-- respuesta generada
-- matches recuperados
-
-## Estructura del Proyecto
+## Estructura Del Proyecto
 
 ```text
 rag-school/
-|-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
-|-- server/
-|   |-- config.js
-|   |-- index.js
-|   `-- services/
-|       |-- chunking.js
-|       |-- gemini.js
-|       |-- pdf.js
-|       `-- supabase.js
-|-- src/
-|   |-- App.jsx
-|   |-- main.jsx
-|   `-- styles.css
+|-- app/
+|   |-- api/
+|   |   |-- health/
+|   |   |-- query/
+|   |   `-- train/
+|   |       |-- export/
+|   |       `-- metrics/
+|   |-- train/
+|   |-- globals.css
+|   |-- layout.tsx
+|   `-- page.tsx
+|-- components/
+|   `-- rag-shell.tsx
+|-- lib/
+|   |-- server/
+|   |   |-- chunking.ts
+|   |   |-- config.ts
+|   |   |-- embeddings.ts
+|   |   |-- ingestion.ts
+|   |   |-- llm.ts
+|   |   |-- multimodal.ts
+|   |   |-- office.ts
+|   |   |-- pdf.ts
+|   |   `-- supabase.ts
+|   `-- shared/
+|       |-- llm.ts
+|       `-- types.ts
+|-- supabase/
+|   `-- schema.sql
 |-- .env.example
-|-- index.html
 |-- package.json
-|-- package-lock.json
 |-- README.md
 `-- README.es.md
 ```
 
+## Base De Datos
+
+El esquema SQL usado para pgvector esta guardado en:
+
+- [supabase/schema.sql](/d:/1__Programacion/1-programacion/1__FrontEnd/1__Small%20projects/rag-school/supabase/schema.sql)
+
+Define:
+- extension `vector`
+- tabla `documents`
+- funcion de similitud `match_documents`
+
 ## Notas
 
-- Esta es la primera migracion de backend fuera de `n8n`.
-- Esta version inicial del backend soporta solo PDF para archivos binarios.
-- Las exportaciones historicas de workflows conviene seguir guardandolas aparte en carpetas versionadas como `workflows/v1` y `workflows/v2`.
-- Groq queda como modelo principal de respuesta y Gemini sigue usandose para embeddings.
+- Groq se usa solo para la generacion final de respuestas.
+- Gemini se usa para embeddings y extraccion multimodal.
+- La pagina de entrenamiento ahora incluye metricas del vector store y herramientas de exportacion.

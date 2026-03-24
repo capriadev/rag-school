@@ -1,64 +1,74 @@
 # RAG School
 
-RAG School is now a full application repository with:
-- a React + Vite client
-- a Node.js backend that replaces the previous `n8n` workflow logic
+RAG School is a Next.js application for training and querying a Supabase-based vector store.
 
-The current goal is to keep the same functional flow in code:
-- train the knowledge base with plain text
-- train the knowledge base with PDF files
-- store embeddings in Supabase with `pgvector`
-- retrieve relevant chunks for a question
-- generate the final answer with Groq
+It replaces the previous n8n workflow with application code for:
+- ingestion and chunking
+- embedding generation with Gemini
+- semantic retrieval from Supabase pgvector
+- final answer generation with Groq
 
-## Current Architecture
+## Current Stack
 
-### Frontend
+- Next.js App Router
+- React 18
+- TypeScript
+- Supabase JS
+- Google GenAI SDK
+- Groq SDK
+- `pdf-parse`
+- `xlsx`
+- `jszip`
 
-The frontend is a lightweight client used to:
-- submit text and PDF files for training
-- send user questions
-- display raw JSON responses during development
+## What The App Does
 
-### Backend
+### Query flow
 
-The backend now owns the logic that previously lived in `n8n`:
-- request validation
-- PDF text extraction
-- chunking
-- embedding generation
-- Supabase inserts
-- semantic retrieval
-- final response generation
+- accepts a user question
+- retrieves configurable chunk counts from Supabase
+- chooses the Groq model according to chunk count
+- rotates across Groq API keys and model fallbacks
+- returns the final answer plus retrieved matches
 
-## Tech Stack
+### Training flow
 
-- React `18.2.0`
-- Vite `^8.0.1`
-- Express `^5.2.1`
-- Supabase JS `^2.100.0`
-- Google GenAI SDK `^1.46.0`
-- Groq SDK `^1.1.1`
-- Multer for file uploads
-- pdf-parse for PDF ingestion
+- accepts manual text
+- accepts files for ingestion
+- extracts text or semantic context
+- chunks content
+- creates Gemini embeddings
+- stores vectors in Supabase
+
+Supported file types:
+- text
+- PDF
+- CSV
+- Excel: `xls`, `xlsx`, `ods`
+- PowerPoint: `pptx`
+- image
+- audio
+- video
+
+Notes:
+- image/audio/video extraction uses Gemini multimodal processing
+- `ppt` legacy binary format is not supported
+- training currently accepts one uploaded file per request
 
 ## Environment Variables
 
-Create a local `.env` based on `.env.example`.
+Create `.env` from `.env.example`.
 
-Main variables:
-- `PORT`
-- `VITE_API_BASE_URL`
-- `GEMINI_API_KEY`
-- `GEMINI_EMBEDDING_MODEL`
-- `GEMINI_EMBEDDING_DIMENSION`
-- `GEMINI_LLM_MODEL`
-- `GROQ_API_KEY`
-- `GROQ_MODEL`
+Required variables:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_DOCUMENTS_TABLE`
 - `SUPABASE_MATCH_FUNCTION`
+- `GEMINI_API_KEY`
+- `GEMINI_API_KEY_2` optional
+- `GEMINI_API_KEY_3` optional
+- `GROQ_API_KEY`
+- `GROQ_API_KEY_2` optional
+- `GROQ_API_KEY_3` optional
 
 ## Local Development
 
@@ -68,92 +78,118 @@ Install dependencies:
 npm install
 ```
 
-Run the frontend:
+Run the app:
 
 ```bash
 npm run dev
 ```
 
-Run the backend:
-
-```bash
-npm run server
-```
-
-For backend development with file watching:
-
-```bash
-npm run dev:server
-```
-
-Build the frontend:
+Build production:
 
 ```bash
 npm run build
 ```
 
-## API Endpoints
+Run production:
+
+```bash
+npm run start
+```
+
+The app uses a single Next.js runtime. Frontend and backend are no longer started separately.
+
+## API Routes
 
 ### `POST /api/train`
 
-Training endpoint for:
-- plain text via `text`
-- PDF via `file`
+Multipart training endpoint.
 
-Request format:
-- `multipart/form-data`
+Inputs:
+- `text`
+- `file`
 
 Returns:
-- insertion status
-- number of generated chunks
-- number of inserted records
+- inserted records
+- generated chunk count
+- processed source count
+
+### `GET /api/train/metrics`
+
+Returns vector store metrics:
+- estimated storage usage
+- total chunks
+- unique sources
+- source type breakdown
+
+### `GET /api/train/export`
+
+Downloads a JSON snapshot of the current vector store table.
 
 ### `POST /api/query`
 
-Query endpoint for semantic retrieval plus answer generation.
+JSON query endpoint.
 
-Request body:
+Example body:
 
 ```json
 {
-  "question": "What does the document say about user roles?"
+  "question": "What does the material say about user roles?",
+  "chunkCount": 5
 }
 ```
-
-Returns:
-- generated answer
-- retrieved matches
 
 ## Project Structure
 
 ```text
 rag-school/
-|-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
-|-- server/
-|   |-- config.js
-|   |-- index.js
-|   `-- services/
-|       |-- chunking.js
-|       |-- gemini.js
-|       |-- pdf.js
-|       `-- supabase.js
-|-- src/
-|   |-- App.jsx
-|   |-- main.jsx
-|   `-- styles.css
+|-- app/
+|   |-- api/
+|   |   |-- health/
+|   |   |-- query/
+|   |   `-- train/
+|   |       |-- export/
+|   |       `-- metrics/
+|   |-- train/
+|   |-- globals.css
+|   |-- layout.tsx
+|   `-- page.tsx
+|-- components/
+|   `-- rag-shell.tsx
+|-- lib/
+|   |-- server/
+|   |   |-- chunking.ts
+|   |   |-- config.ts
+|   |   |-- embeddings.ts
+|   |   |-- ingestion.ts
+|   |   |-- llm.ts
+|   |   |-- multimodal.ts
+|   |   |-- office.ts
+|   |   |-- pdf.ts
+|   |   `-- supabase.ts
+|   `-- shared/
+|       |-- llm.ts
+|       `-- types.ts
+|-- supabase/
+|   `-- schema.sql
 |-- .env.example
-|-- index.html
 |-- package.json
-|-- package-lock.json
 |-- README.md
 `-- README.es.md
 ```
 
+## Database
+
+The SQL schema used for pgvector setup is stored at:
+
+- [supabase/schema.sql](/d:/1__Programacion/1-programacion/1__FrontEnd/1__Small%20projects/rag-school/supabase/schema.sql)
+
+It defines:
+- `vector` extension
+- `documents` table
+- `match_documents` similarity function
+
 ## Notes
 
-- This is the first backend migration away from `n8n`.
-- The current backend version supports PDF ingestion only for binary files.
-- Historical workflow exports should still be committed separately under versioned folders such as `workflows/v1` and `workflows/v2`.
-- Groq is the primary answer model and Gemini remains in use for embeddings.
+- Groq is only used for final answer generation.
+- Gemini is used for embeddings and multimodal extraction.
+- The training page now includes vector store metrics and export tools.
