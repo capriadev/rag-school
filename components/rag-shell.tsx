@@ -76,6 +76,35 @@ function QueryPage({
         </div>
       </section>
 
+      <section className="result-card answer-card wide-card">
+        <div className="section-head compact">
+          <div>
+            <p className="section-label">Salida</p>
+            <h3>Respuesta</h3>
+          </div>
+        </div>
+
+        {consultStatus === "processing" && streamingText ? (
+          <pre className="response-block accent">{streamingText}</pre>
+        ) : null}
+
+        {responseData?.answer ? (
+          <div className="answer-body markdown-body">
+            <ReactMarkdown>{responseData.answer}</ReactMarkdown>
+          </div>
+        ) : null}
+
+        {responseData?.error ? (
+          <pre className="response-block error">{responseData.error}</pre>
+        ) : null}
+
+        {!responseData && !streamingText ? (
+          <p className="empty-copy">
+            La respuesta final se renderiza en markdown para que listas, enfasis y estructura se vean bien.
+          </p>
+        ) : null}
+      </section>
+
       <section className="query-panel">
         <div className="section-head">
           <div>
@@ -156,36 +185,6 @@ function QueryPage({
           )}
         </div>
       </section>
-
-      <section className="result-card answer-card wide-card">
-        <div className="section-head compact">
-          <div>
-            <p className="section-label">Salida</p>
-            <h3>Respuesta</h3>
-          </div>
-        </div>
-
-        {consultStatus === "processing" && streamingText ? (
-          <pre className="response-block accent">{streamingText}</pre>
-        ) : null}
-
-        {responseData?.answer ? (
-          <div className="answer-body markdown-body">
-            <ReactMarkdown>{responseData.answer}</ReactMarkdown>
-          </div>
-        ) : null}
-
-        {responseData?.error ? (
-          <pre className="response-block error">{responseData.error}</pre>
-        ) : null}
-
-        {!responseData && !streamingText ? (
-          <p className="empty-copy">
-            La respuesta final se renderiza en markdown para que listas, enfasis y estructura se
-            vean bien.
-          </p>
-        ) : null}
-      </section>
     </div>
   )
 }
@@ -228,6 +227,7 @@ function TrainPage({
           <span>PDF</span>
           <span>PPTX</span>
           <span>Excel</span>
+          <span>CSV</span>
         </div>
       </section>
 
