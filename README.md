@@ -84,6 +84,8 @@ Run the app:
 npm run dev
 ```
 
+If development ever starts returning `404` for `/_next/static/...` files and the UI loses styles, the local Next cache is likely desynchronized. `npm run dev` now clears `.next` and old `dist` output before starting to reduce that issue.
+
 Build production:
 
 ```bash

@@ -84,6 +84,8 @@ Levantar la app:
 npm run dev
 ```
 
+Si en desarrollo empiezan a aparecer `404` en `/_next/static/...` y la UI pierde estilos, lo mas probable es que el cache local de Next haya quedado desincronizado. `npm run dev` ahora limpia `.next` y la salida vieja de `dist` antes de arrancar para reducir ese problema.
+
 Compilar produccion:
 
 ```bash
