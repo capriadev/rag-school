@@ -71,5 +71,4 @@ export const config = {
   matchFunction: process.env.SUPABASE_MATCH_FUNCTION || "match_documents",
   chunkSize: getNumberEnv("CHUNK_SIZE", 1400),
   chunkOverlap: getNumberEnv("CHUNK_OVERLAP", 200),
-  queryMatchCount: getNumberEnv("QUERY_MATCH_COUNT", 6),
 }
