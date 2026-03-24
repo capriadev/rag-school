@@ -44,7 +44,8 @@ a {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -254,6 +255,7 @@ textarea {
 
 .field input,
 .field textarea,
+.field select,
 .upload-zone {
   width: 100%;
   border: 1px solid var(--border);
@@ -263,14 +265,16 @@ textarea {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   padding: 18px 20px;
   outline: none;
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   border-color: var(--border-active);
   transform: translateY(-1px);
 }
@@ -281,10 +285,32 @@ textarea {
   line-height: 1.7;
 }
 
+.field select {
+  appearance: none;
+  min-height: 60px;
+  cursor: pointer;
+}
+
 .field-help {
   color: var(--text-soft);
   font-size: 11px;
   text-align: right;
+}
+
+.field-help-left {
+  text-align: left;
+}
+
+.field-inline {
+  min-width: 240px;
+  max-width: 320px;
+}
+
+.query-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
 }
 
 .upload-zone {
@@ -554,5 +580,15 @@ textarea {
 
   .primary-button {
     width: 100%;
+  }
+
+  .field-inline {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .query-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

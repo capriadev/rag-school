@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { CHUNK_OPTIONS } from "../lib/shared/llm"
+import { CHUNK_OPTIONS, DEFAULT_CHUNK_COUNT } from "../lib/shared/llm"
 import type { ChangeEvent, FormEvent, MutableRefObject } from "react"
 import type { QueryResponse, Status, TrainResponse } from "../lib/shared/types"
 
@@ -98,28 +98,30 @@ function QueryPage({
             <small className="field-help">{question.length}/700</small>
           </label>
 
-          <label className="field">
-            <span>Fragmentos a recuperar</span>
-            <select
-              value={chunkCount}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-                setChunkCount(Number(event.target.value))
-              }
-            >
-              {CHUNK_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <small className="field-help">
-              La cantidad elegida ajusta recuperacion y modelo de respuesta.
-            </small>
-          </label>
+          <div className="query-actions">
+            <label className="field field-inline">
+              <span>Fragmentos a recuperar</span>
+              <select
+                value={chunkCount}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  setChunkCount(Number(event.target.value))
+                }
+              >
+                {CHUNK_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <small className="field-help field-help-left">
+                La cantidad elegida ajusta recuperacion y modelo de respuesta.
+              </small>
+            </label>
 
-          <button className="primary-button" type="submit">
-            Consultar
-          </button>
+            <button className="primary-button" type="submit">
+              Consultar
+            </button>
+          </div>
         </form>
 
         <div className="inline-fragments">
@@ -309,7 +311,7 @@ export function RagShell({ mode }: RagShellProps) {
   const [trainText, setTrainText] = useState("")
   const [trainingStatus, setTrainingStatus] = useState<Status>(null)
   const [question, setQuestion] = useState("")
-  const [chunkCount, setChunkCount] = useState(3)
+  const [chunkCount, setChunkCount] = useState(DEFAULT_CHUNK_COUNT)
   const [responseData, setResponseData] = useState<QueryResponse | TrainResponse | null>(null)
   const [streamingText, setStreamingText] = useState("")
   const [consultStatus, setConsultStatus] = useState<Status>(null)
