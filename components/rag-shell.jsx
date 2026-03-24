@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
+import { CHUNK_OPTIONS } from "../lib/shared/llm"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
@@ -19,7 +20,16 @@ function StatusBadge({ status }) {
   return <span className={`status-pill ${status}`}>{labels[status] || status}</span>
 }
 
-function QueryPage({ question, setQuestion, handleConsult, consultStatus, responseData, streamingText }) {
+function QueryPage({
+  question,
+  setQuestion,
+  chunkCount,
+  setChunkCount,
+  handleConsult,
+  consultStatus,
+  responseData,
+  streamingText,
+}) {
   const previewMatches = useMemo(() => responseData?.matches || [], [responseData])
 
   return (
@@ -69,6 +79,20 @@ function QueryPage({ question, setQuestion, handleConsult, consultStatus, respon
               placeholder="Escribe una consulta con el mayor contexto posible para obtener mejores resultados."
             />
             <small className="field-help">{question.length}/700</small>
+          </label>
+
+          <label className="field">
+            <span>Fragmentos a recuperar</span>
+            <select value={chunkCount} onChange={(event) => setChunkCount(Number(event.target.value))}>
+              {CHUNK_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <small className="field-help">
+              La cantidad elegida ajusta recuperacion y modelo de respuesta.
+            </small>
           </label>
 
           <button className="primary-button" type="submit">
@@ -245,6 +269,7 @@ export function RagShell({ mode }) {
   const [trainText, setTrainText] = useState("")
   const [trainingStatus, setTrainingStatus] = useState(null)
   const [question, setQuestion] = useState("")
+  const [chunkCount, setChunkCount] = useState(3)
   const [responseData, setResponseData] = useState(null)
   const [streamingText, setStreamingText] = useState("")
   const [consultStatus, setConsultStatus] = useState(null)
@@ -294,7 +319,7 @@ export function RagShell({ mode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, chunkCount }),
       })
 
       if (!res.ok) {
@@ -359,6 +384,8 @@ export function RagShell({ mode }) {
         <QueryPage
           question={question}
           setQuestion={setQuestion}
+          chunkCount={chunkCount}
+          setChunkCount={setChunkCount}
           handleConsult={handleConsult}
           consultStatus={consultStatus}
           responseData={responseData}

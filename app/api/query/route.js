@@ -1,15 +1,27 @@
 import { NextResponse } from "next/server"
 import { config } from "../../../lib/server/config"
 import { embedTexts } from "../../../lib/server/gemini"
+import { CHUNK_OPTIONS } from "../../../lib/shared/llm"
 import { generateAnswer } from "../../../lib/server/llm"
 import { matchDocuments } from "../../../lib/server/supabase"
 
 export const runtime = "nodejs"
 
+function resolveChunkCount(value) {
+  const parsed = Number(value)
+
+  if (!Number.isInteger(parsed)) {
+    return 3
+  }
+
+  return CHUNK_OPTIONS.includes(parsed) ? parsed : 3
+}
+
 export async function POST(request) {
   try {
     const body = await request.json()
     const question = String(body.question || "").trim()
+    const chunkCount = resolveChunkCount(body.chunkCount)
 
     if (!question) {
       return NextResponse.json(
@@ -29,7 +41,7 @@ export async function POST(request) {
 
     const matches = await matchDocuments({
       embedding,
-      matchCount: config.queryMatchCount,
+      matchCount: chunkCount,
       filter: {},
     })
 
@@ -42,11 +54,12 @@ export async function POST(request) {
       return `[Fragmento ${index + 1}${similarity}]\n${match.content}`
     })
 
-    const answer = await generateAnswer({ question, contexts })
+    const answer = await generateAnswer({ question, contexts, chunkCount })
 
     return NextResponse.json({
       success: true,
       answer,
+      chunkCount,
       matches,
     })
   } catch (error) {
