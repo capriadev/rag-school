@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { embedTexts } from "../../../lib/server/gemini"
-import { CHUNK_OPTIONS } from "../../../lib/shared/llm"
+import { embedTexts } from "../../../lib/server/embeddings"
+import { CHUNK_OPTIONS, DEFAULT_CHUNK_COUNT } from "../../../lib/shared/llm"
 import { generateAnswer } from "../../../lib/server/llm"
 import { matchDocuments } from "../../../lib/server/supabase"
 import type { MatchDocument } from "../../../lib/shared/types"
@@ -11,10 +11,10 @@ function resolveChunkCount(value: unknown) {
   const parsed = Number(value)
 
   if (!Number.isInteger(parsed)) {
-    return 3
+    return DEFAULT_CHUNK_COUNT
   }
 
-  return CHUNK_OPTIONS.includes(parsed) ? parsed : 3
+  return CHUNK_OPTIONS.includes(parsed) ? parsed : DEFAULT_CHUNK_COUNT
 }
 
 export async function POST(request: Request) {

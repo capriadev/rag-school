@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { config } from "../../../lib/server/config"
 import { chunkText } from "../../../lib/server/chunking"
-import { embedTexts } from "../../../lib/server/gemini"
+import { embedTexts } from "../../../lib/server/embeddings"
 import { extractPdfText } from "../../../lib/server/pdf"
 import { insertDocuments } from "../../../lib/server/supabase"
 import type { InsertDocument, SourceInput } from "../../../lib/shared/types"
@@ -65,10 +64,7 @@ export async function POST(request: Request) {
     }
 
     const preparedChunks = sources.flatMap((source) =>
-      chunkText(source.content, {
-        chunkSize: config.chunkSize,
-        chunkOverlap: config.chunkOverlap,
-      }).map((chunk, index) => ({
+      chunkText(source.content).map((chunk, index) => ({
         content: chunk,
         metadata: {
           sourceType: source.sourceType,

@@ -1,15 +1,15 @@
 import Groq from "groq-sdk"
-import { CHUNK_OPTIONS, MODEL_BY_CHUNKS } from "../shared/llm"
+import { CHUNK_OPTIONS, DEFAULT_CHUNK_COUNT, MODEL_ROTATION_BY_CHUNKS } from "../shared/llm"
 import { config } from "./config"
 
 const groqClients = config.groqApiKeys.map((apiKey) => new Groq({ apiKey }))
 
-function selectModel(chunkCount: number): string {
+function resolveModelRotation(chunkCount: number): string[] {
   const closest = CHUNK_OPTIONS.reduce((previous, current) =>
     Math.abs(current - chunkCount) < Math.abs(previous - chunkCount) ? current : previous,
   )
 
-  return MODEL_BY_CHUNKS[closest] ?? config.groqModel
+  return MODEL_ROTATION_BY_CHUNKS[closest] ?? MODEL_ROTATION_BY_CHUNKS[DEFAULT_CHUNK_COUNT]
 }
 
 function buildPrompt({ question, contexts }: { question: string; contexts: string[] }): string {
@@ -41,26 +41,28 @@ export async function generateAnswer({
     throw new Error("No hay proveedor de respuesta disponible. Configura GROQ_API_KEY.")
   }
 
-  const model = selectModel(chunkCount ?? contexts.length)
+  const modelRotation = resolveModelRotation(chunkCount ?? contexts.length)
   const errors = []
 
-  for (const [index, client] of groqClients.entries()) {
-    try {
-      const completion = await client.chat.completions.create({
-        model,
-        temperature: 0.2,
-        messages: [
-          {
-            role: "user",
-            content: buildPrompt({ question, contexts }),
-          },
-        ],
-      })
+  for (const model of modelRotation) {
+    for (const [index, client] of groqClients.entries()) {
+      try {
+        const completion = await client.chat.completions.create({
+          model,
+          temperature: 0.2,
+          messages: [
+            {
+              role: "user",
+              content: buildPrompt({ question, contexts }),
+            },
+          ],
+        })
 
-      return completion.choices?.[0]?.message?.content || "No se pudo generar una respuesta."
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown error"
-      errors.push(`GROQ_API_KEY_${index + 1}: ${message}`)
+        return completion.choices?.[0]?.message?.content || "No se pudo generar una respuesta."
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown error"
+        errors.push(`${model} via GROQ_API_KEY_${index + 1}: ${message}`)
+      }
     }
   }
 

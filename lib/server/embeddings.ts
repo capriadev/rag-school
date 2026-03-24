@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai"
 import { config } from "./config"
 
+const GEMINI_EMBEDDING_MODEL = "models/gemini-embedding-2-preview"
+const GEMINI_EMBEDDING_DIMENSION = 3072
+
 const geminiClients = config.geminiApiKeys.map((apiKey) => new GoogleGenAI({ apiKey }))
 
 export async function embedTexts(texts: string[], taskType: string): Promise<number[][]> {
@@ -11,11 +14,11 @@ export async function embedTexts(texts: string[], taskType: string): Promise<num
   for (const [index, client] of geminiClients.entries()) {
     try {
       const response = await client.models.embedContent({
-        model: config.geminiEmbeddingModel,
+        model: GEMINI_EMBEDDING_MODEL,
         contents: texts,
         config: {
           taskType,
-          outputDimensionality: config.geminiEmbeddingDimension,
+          outputDimensionality: GEMINI_EMBEDDING_DIMENSION,
         },
       })
 
