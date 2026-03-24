@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
-import { config } from "../../../lib/server/config"
 import { embedTexts } from "../../../lib/server/gemini"
 import { CHUNK_OPTIONS } from "../../../lib/shared/llm"
 import { generateAnswer } from "../../../lib/server/llm"
 import { matchDocuments } from "../../../lib/server/supabase"
+import type { MatchDocument } from "../../../lib/shared/types"
 
 export const runtime = "nodejs"
 
-function resolveChunkCount(value) {
+function resolveChunkCount(value: unknown) {
   const parsed = Number(value)
 
   if (!Number.isInteger(parsed)) {
@@ -17,9 +17,12 @@ function resolveChunkCount(value) {
   return CHUNK_OPTIONS.includes(parsed) ? parsed : 3
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = (await request.json()) as {
+      question?: unknown
+      chunkCount?: unknown
+    }
     const question = String(body.question || "").trim()
     const chunkCount = resolveChunkCount(body.chunkCount)
 
@@ -45,7 +48,7 @@ export async function POST(request) {
       filter: {},
     })
 
-    const contexts = matches.map((match, index) => {
+    const contexts = matches.map((match: MatchDocument, index: number) => {
       const similarity =
         typeof match.similarity === "number"
           ? ` (similitud ${(match.similarity * 100).toFixed(1)}%)`
@@ -63,10 +66,12 @@ export async function POST(request) {
       matches,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Query failed"
+
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Query failed",
+        error: message,
       },
       { status: 500 },
     )

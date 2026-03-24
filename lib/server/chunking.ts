@@ -1,4 +1,6 @@
-export function chunkText(text, options = {}) {
+import type { ChunkOptions } from "../shared/types"
+
+export function chunkText(text: string, options: ChunkOptions = {}) {
   const chunkSize = options.chunkSize ?? 1400
   const chunkOverlap = options.chunkOverlap ?? 200
   const normalized = String(text || "").replace(/\r\n/g, "\n").trim()
@@ -10,7 +12,7 @@ export function chunkText(text, options = {}) {
     .map((paragraph) => paragraph.trim())
     .filter(Boolean)
 
-  const chunks = []
+  const chunks: string[] = []
   let current = ""
 
   for (const paragraph of paragraphs) {

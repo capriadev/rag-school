@@ -4,7 +4,7 @@ import { config } from "./config"
 
 const groqClients = config.groqApiKeys.map((apiKey) => new Groq({ apiKey }))
 
-function selectModel(chunkCount) {
+function selectModel(chunkCount: number): string {
   const closest = CHUNK_OPTIONS.reduce((previous, current) =>
     Math.abs(current - chunkCount) < Math.abs(previous - chunkCount) ? current : previous,
   )
@@ -12,7 +12,7 @@ function selectModel(chunkCount) {
   return MODEL_BY_CHUNKS[closest] ?? config.groqModel
 }
 
-function buildPrompt({ question, contexts }) {
+function buildPrompt({ question, contexts }: { question: string; contexts: string[] }): string {
   return [
     "Sos un asistente RAG de alta precision.",
     "Responde unicamente con informacion presente en el contexto recuperado.",
@@ -28,7 +28,15 @@ function buildPrompt({ question, contexts }) {
   ].join("\n")
 }
 
-export async function generateAnswer({ question, contexts, chunkCount }) {
+export async function generateAnswer({
+  question,
+  contexts,
+  chunkCount,
+}: {
+  question: string
+  contexts: string[]
+  chunkCount?: number
+}): Promise<string> {
   if (!groqClients.length) {
     throw new Error("No hay proveedor de respuesta disponible. Configura GROQ_API_KEY.")
   }
@@ -51,7 +59,8 @@ export async function generateAnswer({ question, contexts, chunkCount }) {
 
       return completion.choices?.[0]?.message?.content || "No se pudo generar una respuesta."
     } catch (error) {
-      errors.push(`GROQ_API_KEY_${index + 1}: ${error.message || "unknown error"}`)
+      const message = error instanceof Error ? error.message : "unknown error"
+      errors.push(`GROQ_API_KEY_${index + 1}: ${message}`)
     }
   }
 

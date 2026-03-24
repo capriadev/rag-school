@@ -3,11 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { CHUNK_OPTIONS } from "../lib/shared/llm"
+import type { ChangeEvent, FormEvent, MutableRefObject } from "react"
+import type { QueryResponse, Status, TrainResponse } from "../lib/shared/types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const TRAIN_ACCEPT = ".pdf,.ppt,.pptx,.xls,.xlsx,.csv,image/*,video/*,audio/*"
 
-function StatusBadge({ status }) {
+interface StatusBadgeProps {
+  status: Status
+}
+
+function StatusBadge({ status }: StatusBadgeProps) {
   if (!status) return null
 
   const labels = {
@@ -20,6 +26,17 @@ function StatusBadge({ status }) {
   return <span className={`status-pill ${status}`}>{labels[status] || status}</span>
 }
 
+interface QueryPageProps {
+  question: string
+  setQuestion: (value: string) => void
+  chunkCount: number
+  setChunkCount: (value: number) => void
+  handleConsult: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  consultStatus: Status
+  responseData: QueryResponse | null
+  streamingText: string
+}
+
 function QueryPage({
   question,
   setQuestion,
@@ -29,7 +46,7 @@ function QueryPage({
   consultStatus,
   responseData,
   streamingText,
-}) {
+}: QueryPageProps) {
   const previewMatches = useMemo(() => responseData?.matches || [], [responseData])
 
   return (
@@ -72,10 +89,10 @@ function QueryPage({
           <label className="field">
             <span>Pregunta</span>
             <textarea
-              rows="4"
-              maxLength="700"
+              rows={4}
+              maxLength={700}
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setQuestion(event.target.value)}
               placeholder="Escribe una consulta con el mayor contexto posible para obtener mejores resultados."
             />
             <small className="field-help">{question.length}/700</small>
@@ -83,7 +100,12 @@ function QueryPage({
 
           <label className="field">
             <span>Fragmentos a recuperar</span>
-            <select value={chunkCount} onChange={(event) => setChunkCount(Number(event.target.value))}>
+            <select
+              value={chunkCount}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                setChunkCount(Number(event.target.value))
+              }
+            >
               {CHUNK_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -166,6 +188,16 @@ function QueryPage({
   )
 }
 
+interface TrainPageProps {
+  trainText: string
+  setTrainText: (value: string) => void
+  handleTrain: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  trainingStatus: Status
+  responseData: TrainResponse | QueryResponse | null
+  fileRef: MutableRefObject<HTMLInputElement | null>
+  selectedFileName: string
+}
+
 function TrainPage({
   trainText,
   setTrainText,
@@ -174,7 +206,7 @@ function TrainPage({
   responseData,
   fileRef,
   selectedFileName,
-}) {
+}: TrainPageProps) {
   return (
     <div className="page-shell">
       <section className="hero training-hero">
@@ -210,9 +242,9 @@ function TrainPage({
           <label className="field">
             <span>Texto</span>
             <textarea
-              rows="10"
+              rows={10}
               value={trainText}
-              onChange={(e) => setTrainText(e.target.value)}
+              onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setTrainText(event.target.value)}
               placeholder="Pega contenido textual, notas, instrucciones o resumenes."
             />
           </label>
@@ -263,20 +295,28 @@ function TrainPage({
   )
 }
 
-export function RagShell({ mode }) {
+interface RagShellProps {
+  mode: "query" | "train"
+}
+
+function parseResponsePayload<T>(text: string): T | null {
+  return text ? (JSON.parse(text) as T) : null
+}
+
+export function RagShell({ mode }: RagShellProps) {
   const isTrainingRoute = mode === "train"
-  const fileRef = useRef(null)
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const [trainText, setTrainText] = useState("")
-  const [trainingStatus, setTrainingStatus] = useState(null)
+  const [trainingStatus, setTrainingStatus] = useState<Status>(null)
   const [question, setQuestion] = useState("")
   const [chunkCount, setChunkCount] = useState(3)
-  const [responseData, setResponseData] = useState(null)
+  const [responseData, setResponseData] = useState<QueryResponse | TrainResponse | null>(null)
   const [streamingText, setStreamingText] = useState("")
-  const [consultStatus, setConsultStatus] = useState(null)
+  const [consultStatus, setConsultStatus] = useState<Status>(null)
   const [selectedFileName, setSelectedFileName] = useState("")
 
-  async function handleTrain(e) {
-    e.preventDefault()
+  async function handleTrain(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setTrainingStatus("processing")
     setResponseData(null)
 
@@ -292,7 +332,7 @@ export function RagShell({ mode }) {
       })
 
       const text = await res.text()
-      const payload = text ? JSON.parse(text) : null
+      const payload = parseResponsePayload<TrainResponse>(text)
 
       if (!res.ok) {
         throw new Error(payload?.error || "Error al entrenar")
@@ -303,12 +343,14 @@ export function RagShell({ mode }) {
     } catch (err) {
       console.error(err)
       setTrainingStatus("error")
-      setResponseData({ error: err.message })
+      setResponseData({
+        error: err instanceof Error ? err.message : "Error al entrenar",
+      })
     }
   }
 
-  async function handleConsult(e) {
-    e.preventDefault()
+  async function handleConsult(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setResponseData(null)
     setStreamingText("")
     setConsultStatus("processing")
@@ -330,7 +372,7 @@ export function RagShell({ mode }) {
       const text = await res.text()
 
       try {
-        const json = JSON.parse(text)
+        const json = parseResponsePayload<QueryResponse>(text)
         setResponseData(json)
       } catch {
         setResponseData({ text })
@@ -340,7 +382,9 @@ export function RagShell({ mode }) {
     } catch (err) {
       console.error(err)
       setConsultStatus("error")
-      setResponseData({ error: err.message })
+      setResponseData({
+        error: err instanceof Error ? err.message : "Error al consultar",
+      })
     }
   }
 

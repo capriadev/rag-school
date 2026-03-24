@@ -3,7 +3,7 @@ import { config } from "./config"
 
 const geminiClients = config.geminiApiKeys.map((apiKey) => new GoogleGenAI({ apiKey }))
 
-export async function embedTexts(texts, taskType) {
+export async function embedTexts(texts: string[], taskType: string): Promise<number[][]> {
   if (!texts.length) return []
 
   const errors = []
@@ -21,7 +21,8 @@ export async function embedTexts(texts, taskType) {
 
       return (response.embeddings || []).map((item) => item.values || [])
     } catch (error) {
-      errors.push(`GEMINI_API_KEY_${index + 1}: ${error.message || "unknown error"}`)
+      const message = error instanceof Error ? error.message : "unknown error"
+      errors.push(`GEMINI_API_KEY_${index + 1}: ${message}`)
     }
   }
 

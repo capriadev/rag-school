@@ -4,15 +4,16 @@ import { chunkText } from "../../../lib/server/chunking"
 import { embedTexts } from "../../../lib/server/gemini"
 import { extractPdfText } from "../../../lib/server/pdf"
 import { insertDocuments } from "../../../lib/server/supabase"
+import type { InsertDocument, SourceInput } from "../../../lib/shared/types"
 
 export const runtime = "nodejs"
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const textInput = String(formData.get("text") || "").trim()
     const file = formData.get("file")
-    const sources = []
+    const sources: SourceInput[] = []
 
     if (textInput) {
       sources.push({
@@ -22,7 +23,7 @@ export async function POST(request) {
       })
     }
 
-    if (file && typeof file === "object" && "arrayBuffer" in file) {
+    if (file instanceof File) {
       if (file.type !== "application/pdf") {
         return NextResponse.json(
           {
@@ -92,7 +93,7 @@ export async function POST(request) {
       "RETRIEVAL_DOCUMENT",
     )
 
-    const documents = preparedChunks.map((item, index) => ({
+    const documents: InsertDocument[] = preparedChunks.map((item, index) => ({
       ...item,
       embedding: embeddings[index],
     }))
@@ -113,10 +114,12 @@ export async function POST(request) {
       chunks: documents.length,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Training failed"
+
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Training failed",
+        error: message,
       },
       { status: 500 },
     )

@@ -2,11 +2,11 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-function getEnv(name) {
+function getEnv(name: string): string {
   return process.env[name]?.trim() || ""
 }
 
-function getRequiredEnv(name) {
+function getRequiredEnv(name: string): string {
   const value = getEnv(name)
 
   if (!value) {
@@ -16,7 +16,7 @@ function getRequiredEnv(name) {
   return value
 }
 
-function getNumberEnv(name, fallback) {
+function getNumberEnv(name: string, fallback: number): number {
   const value = getEnv(name)
 
   if (!value) return fallback
@@ -30,8 +30,8 @@ function getNumberEnv(name, fallback) {
   return parsed
 }
 
-function getSequentialEnvGroup(baseName) {
-  const values = []
+function getSequentialEnvGroup(baseName: string): string[] {
+  const values: string[] = []
   let index = 1
 
   while (true) {
@@ -49,7 +49,7 @@ function getSequentialEnvGroup(baseName) {
   return values
 }
 
-function getRequiredSequentialEnvGroup(baseName) {
+function getRequiredSequentialEnvGroup(baseName: string): string[] {
   const values = getSequentialEnvGroup(baseName)
 
   if (!values.length) {

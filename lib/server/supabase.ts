@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { config } from "./config"
+import type { InsertDocument, MatchDocument } from "../shared/types"
 
 const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
   auth: {
@@ -8,11 +9,11 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey,
   },
 })
 
-function toPgVector(values) {
+function toPgVector(values: number[]): string {
   return `[${values.join(",")}]`
 }
 
-export async function insertDocuments(documents) {
+export async function insertDocuments(documents: InsertDocument[]): Promise<{ inserted: number }> {
   if (!documents.length) return { inserted: 0 }
 
   const payload = documents.map((document) => ({
@@ -30,7 +31,15 @@ export async function insertDocuments(documents) {
   return { inserted: payload.length }
 }
 
-export async function matchDocuments({ embedding, matchCount, filter = {} }) {
+export async function matchDocuments({
+  embedding,
+  matchCount,
+  filter = {},
+}: {
+  embedding: number[]
+  matchCount: number
+  filter?: Record<string, unknown>
+}): Promise<MatchDocument[]> {
   const { data, error } = await supabase.rpc(config.matchFunction, {
     query_embedding: toPgVector(embedding),
     match_count: matchCount,
