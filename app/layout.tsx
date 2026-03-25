@@ -27,7 +27,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="es" className={`${mono.variable} ${sans.variable}`}>
-      <body>{children}</body>
+      <body className="bg-shell">{children}</body>
     </html>
   )
 }

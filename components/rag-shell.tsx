@@ -9,6 +9,19 @@ import type { QueryResponse, Status, TrainMetricsResponse, TrainResponse, Vector
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const TRAIN_ACCEPT = ".pdf,.pptx,.xls,.xlsx,.ods,.csv,image/*,video/*,audio/*"
 
+function panelClass(extra = "") {
+  return `panel p-7 md:p-8 ${extra}`.trim()
+}
+
+function sectionTitle(label: string, title: string) {
+  return (
+    <div>
+      <p className="section-kicker">{label}</p>
+      <h2 className="font-sans text-[1.7rem] tracking-[-0.5px] text-[#ececf7]">{title}</h2>
+    </div>
+  )
+}
+
 interface StatusBadgeProps {
   status: Status
 }
@@ -23,7 +36,14 @@ function StatusBadge({ status }: StatusBadgeProps) {
     done: "Listo",
   }
 
-  return <span className={`status-pill ${status}`}>{labels[status] || status}</span>
+  const tones: Record<Exclude<Status, null>, string> = {
+    processing: "border-[rgba(0,229,176,0.3)] text-[#00e5b0]",
+    success: "border-[rgba(0,229,176,0.3)] text-[#00e5b0]",
+    error: "border-[rgba(255,76,107,0.3)] text-[#ff4c6b]",
+    done: "border-[rgba(0,229,176,0.3)] text-[#00e5b0]",
+  }
+
+  return <span className={`pill ${tones[status]}`}>{labels[status] || status}</span>
 }
 
 interface QueryPageProps {
@@ -50,91 +70,95 @@ function QueryPage({
   const previewMatches = useMemo(() => responseData?.matches || [], [responseData])
 
   return (
-    <div className="page-shell">
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Consulta semantica</p>
-          <h1>Explora la base de conocimiento.</h1>
-          <p className="hero-text">
-            Recupera contexto relevante y genera respuestas sobre el material ya incorporado al
-            sistema.
+    <div className="relative z-[1] mx-auto flex max-w-[1160px] flex-col gap-6">
+      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]`}>
+        <div>
+          <p className="section-kicker">Consulta semantica</p>
+          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4.6rem)] font-extrabold leading-[0.95] tracking-[-2px]">
+            Explora la base de conocimiento.
+          </h1>
+          <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
+            Recupera contexto relevante y genera respuestas sobre el material ya incorporado al sistema.
           </p>
         </div>
-        <div className="hero-meta">
-          <div className="meta-card">
-            <span>Proveedor embeddings</span>
-            <strong>Gemini</strong>
-          </div>
-          <div className="meta-card">
-            <span>Proveedor respuesta</span>
-            <strong>Groq</strong>
-          </div>
-          <div className="meta-card">
-            <span>Vector store</span>
-            <strong>Supabase</strong>
-          </div>
+
+        <div className="grid gap-3">
+          {[
+            ["Proveedor embeddings", "Gemini"],
+            ["Proveedor respuesta", "Groq"],
+            ["Vector store", "Supabase"],
+          ].map(([label, value]) => (
+            <div
+              className="rounded-[18px] border border-[#2a2a3a] bg-[rgba(255,255,255,0.02)] px-[18px] py-4"
+              key={label}
+            >
+              <span className="mb-2 block text-[11px] uppercase tracking-[1.4px] text-[#55556f]">{label}</span>
+              <strong className="font-sans text-2xl font-bold">{value}</strong>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="result-card answer-card wide-card">
-        <div className="section-head compact">
+      <section className={`${panelClass("min-h-[320px]")}`}>
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="section-label">Salida</p>
-            <h3>Respuesta</h3>
+            <p className="section-kicker">Salida</p>
+            <h3 className="font-sans text-[1.35rem] tracking-[-0.5px]">Respuesta</h3>
           </div>
         </div>
 
         {consultStatus === "processing" && streamingText ? (
-          <pre className="response-block accent">{streamingText}</pre>
+          <pre className="overflow-auto rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-[18px] text-[#00e5b0]">
+            {streamingText}
+          </pre>
         ) : null}
 
         {responseData?.answer ? (
-          <div className="answer-body markdown-body">
+          <div className="prose prose-invert max-w-none rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-[18px] prose-p:leading-8 prose-strong:text-white">
             <ReactMarkdown>{responseData.answer}</ReactMarkdown>
           </div>
         ) : null}
 
         {responseData?.error ? (
-          <pre className="response-block error">{responseData.error}</pre>
+          <pre className="overflow-auto rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-[18px] text-[#ff4c6b]">
+            {responseData.error}
+          </pre>
         ) : null}
 
         {!responseData && !streamingText ? (
-          <p className="empty-copy">
+          <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
             La respuesta final se renderiza en markdown para que listas, enfasis y estructura se vean bien.
           </p>
         ) : null}
       </section>
 
-      <section className="query-panel">
-        <div className="section-head">
-          <div>
-            <p className="section-label">Consulta</p>
-            <h2>Buscar respuesta</h2>
-          </div>
+      <section className={panelClass()}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          {sectionTitle("Consulta", "Buscar respuesta")}
           <StatusBadge status={consultStatus} />
         </div>
 
-        <form className="query-form" onSubmit={handleConsult}>
-          <label className="field">
-            <span>Pregunta</span>
+        <form className="flex flex-col gap-[18px]" onSubmit={handleConsult}>
+          <label className="flex flex-col gap-2">
+            <span className="text-[11px] uppercase tracking-[1.5px] text-[#8e8ea9]">Pregunta</span>
             <textarea
               rows={4}
               maxLength={700}
               value={question}
               onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setQuestion(event.target.value)}
               placeholder="Escribe una consulta con el mayor contexto posible para obtener mejores resultados."
+              className="form-control min-h-[140px] leading-[1.7]"
             />
-            <small className="field-help">{question.length}/700</small>
+            <small className="text-right text-[11px] text-[#55556f]">{question.length}/700</small>
           </label>
 
-          <div className="query-actions">
-            <label className="field field-inline">
-              <span>Fragmentos a recuperar</span>
+          <div className="flex flex-col gap-[18px] md:flex-row md:items-end md:justify-between">
+            <label className="flex min-w-0 flex-col gap-2 md:min-w-[240px] md:max-w-[320px]">
+              <span className="text-[11px] uppercase tracking-[1.5px] text-[#8e8ea9]">Fragmentos a recuperar</span>
               <select
                 value={chunkCount}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-                  setChunkCount(Number(event.target.value))
-                }
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(event.target.value))}
+                className="form-control min-h-[60px] cursor-pointer appearance-none"
               >
                 {CHUNK_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -142,44 +166,45 @@ function QueryPage({
                   </option>
                 ))}
               </select>
-              <small className="field-help field-help-left">
+              <small className="text-left text-[11px] text-[#55556f]">
                 La cantidad elegida ajusta recuperacion y modelo de respuesta.
               </small>
             </label>
 
-            <button className="primary-button" type="submit">
+            <button
+              className="w-full min-w-[180px] rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-4 font-sans text-base font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)] md:w-auto"
+              type="submit"
+            >
               Consultar
             </button>
           </div>
         </form>
 
-        <div className="inline-fragments">
-          <div className="section-head compact">
+        <div className="mt-7 border-t border-[#2a2a3a] pt-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="section-label">Recuperacion</p>
-              <h3>Fragmentos relevantes</h3>
+              <p className="section-kicker">Recuperacion</p>
+              <h3 className="font-sans text-[1.35rem] tracking-[-0.5px]">Fragmentos relevantes</h3>
             </div>
-            <span className="counter">{previewMatches.length}</span>
+            <span className="pill">{previewMatches.length}</span>
           </div>
 
           {previewMatches.length ? (
-            <div className="match-list compact-list">
+            <div className="flex max-h-[360px] flex-col gap-[14px] overflow-auto pr-[6px]">
               {previewMatches.map((match, index) => (
-                <div className="match-item compact-item" key={`${match.id || "match"}-${index}`}>
-                  <div className="match-meta">
+                <div className="rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-4" key={`${match.id || "match"}-${index}`}>
+                  <div className="mb-2.5 flex items-center justify-between gap-4 text-[11px] uppercase tracking-[1.5px] text-[#55556f]">
                     <span>Fragmento {index + 1}</span>
-                    <strong>
-                      {typeof match.similarity === "number"
-                        ? `${(match.similarity * 100).toFixed(1)}%`
-                        : "N/A"}
+                    <strong className="text-[#00e5b0]">
+                      {typeof match.similarity === "number" ? `${(match.similarity * 100).toFixed(1)}%` : "N/A"}
                     </strong>
                   </div>
-                  <p>{match.content}</p>
+                  <p className="m-0 text-[0.92rem] leading-7 text-[#8e8ea9]">{match.content}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="empty-copy">
+            <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
               Los fragmentos recuperados apareceran aca junto al formulario de consulta.
             </p>
           )}
@@ -219,132 +244,143 @@ function TrainPage({
   selectedFileName,
 }: TrainPageProps) {
   return (
-    <div className="page-shell">
-      <section className="hero training-hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Entrenamiento</p>
-          <h1>Incorpora nuevas fuentes.</h1>
-          <p className="hero-text">
-            Carga texto o documentos para ampliar la base de conocimiento y mantener el sistema
-            actualizado.
+    <div className="relative z-[1] mx-auto flex max-w-[1160px] flex-col gap-6">
+      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]`}>
+        <div>
+          <p className="section-kicker">Entrenamiento</p>
+          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4.6rem)] font-extrabold leading-[0.95] tracking-[-2px]">
+            Incorpora nuevas fuentes.
+          </h1>
+          <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
+            Carga texto o documentos para ampliar la base de conocimiento y mantener el sistema actualizado.
           </p>
         </div>
-        <div className="support-grid">
-          <span>Texto</span>
-          <span>Imagenes</span>
-          <span>Video</span>
-          <span>Audio</span>
-          <span>PDF</span>
-          <span>PPTX</span>
-          <span>Excel</span>
-          <span>CSV</span>
+
+        <div className="grid grid-cols-2 gap-3">
+          {["Texto", "Imagenes", "Video", "Audio", "PDF", "PPTX", "Excel", "CSV"].map((item) => (
+            <span
+              className="rounded-[18px] border border-[#2a2a3a] bg-[rgba(255,255,255,0.02)] px-[18px] py-4 font-sans text-[1.1rem] font-bold"
+              key={item}
+            >
+              {item}
+            </span>
+          ))}
         </div>
       </section>
 
-      <section className="result-card metrics-card">
-        <div className="section-head compact">
+      <section className={`${panelClass()} flex min-h-[320px] flex-col gap-5`}>
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="section-label">Metricas</p>
-            <h3>Estado del vector store</h3>
+            <p className="section-kicker">Metricas</p>
+            <h3 className="font-sans text-[1.35rem] tracking-[-0.5px]">Estado del vector store</h3>
           </div>
           <StatusBadge status={metricsStatus} />
         </div>
 
-        <div className="metrics-grid">
-          <div className="metric-box">
-            <span>Espacio estimado</span>
-            <strong>{metrics ? formatMegabytes(metrics.estimatedStorageBytes) : "--"}</strong>
-          </div>
-          <div className="metric-box">
-            <span>Chunks guardados</span>
-            <strong>{metrics?.totalChunks ?? "--"}</strong>
-          </div>
-          <div className="metric-box">
-            <span>Fuentes unicas</span>
-            <strong>{metrics?.uniqueSources ?? "--"}</strong>
-          </div>
+        <div className="grid gap-[14px] lg:grid-cols-3">
+          {[
+            ["Espacio estimado", metrics ? formatMegabytes(metrics.estimatedStorageBytes) : "--"],
+            ["Chunks guardados", metrics?.totalChunks ?? "--"],
+            ["Fuentes unicas", metrics?.uniqueSources ?? "--"],
+          ].map(([label, value]) => (
+            <div className="rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-[18px]" key={label}>
+              <span className="mb-2.5 block text-[11px] uppercase tracking-[1.4px] text-[#55556f]">{label}</span>
+              <strong className="font-sans text-2xl font-bold">{value}</strong>
+            </div>
+          ))}
         </div>
 
-        <div className="metrics-footer">
-          <div className="metrics-breakdown">
-            <span className="section-label">Tipos</span>
-            <div className="upload-chip-row">
+        <div className="flex flex-col gap-[18px] lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-3">
+            <span className="section-kicker mb-0">Tipos</span>
+            <div className="flex flex-wrap gap-[10px]">
               {metrics && Object.keys(metrics.sourceTypes).length ? (
                 Object.entries(metrics.sourceTypes).map(([sourceType, count]) => (
-                  <span className="upload-chip" key={sourceType}>
+                  <span className="rounded-full border border-[#2a2a3a] px-3 py-2 text-[11px] uppercase tracking-[1px] text-[#8e8ea9]" key={sourceType}>
                     {sourceType}: {count}
                   </span>
                 ))
               ) : (
-                <span className="upload-chip">Sin datos</span>
+                <span className="rounded-full border border-[#2a2a3a] px-3 py-2 text-[11px] uppercase tracking-[1px] text-[#8e8ea9]">
+                  Sin datos
+                </span>
               )}
             </div>
           </div>
 
-          <button className="secondary-button" type="button" onClick={handleDownloadSnapshot}>
+          <button
+            className="w-full min-w-[180px] rounded-full border border-[#2a2a3a] bg-[rgba(255,255,255,0.03)] px-[22px] py-[14px] font-sans text-[0.98rem] font-bold text-[#ececf7] transition duration-200 hover:-translate-y-0.5 hover:border-[#5b4cff] hover:bg-[rgba(91,76,255,0.08)] lg:w-auto"
+            type="button"
+            onClick={handleDownloadSnapshot}
+          >
             Descargar snapshot
           </button>
         </div>
       </section>
 
-      <section className="query-panel training-panel">
-        <div className="section-head">
-          <div>
-            <p className="section-label">Carga</p>
-            <h2>Agregar conocimiento</h2>
-          </div>
+      <section className={panelClass()}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          {sectionTitle("Carga", "Agregar conocimiento")}
           <StatusBadge status={trainingStatus} />
         </div>
 
-        <form className="training-form" onSubmit={handleTrain}>
-          <label className="field">
-            <span>Texto</span>
+        <form className="flex flex-col gap-[18px]" onSubmit={handleTrain}>
+          <label className="flex flex-col gap-2">
+            <span className="text-[11px] uppercase tracking-[1.5px] text-[#8e8ea9]">Texto</span>
             <textarea
               rows={10}
               value={trainText}
               onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setTrainText(event.target.value)}
               placeholder="Pega contenido textual, notas, instrucciones o resumenes."
+              className="form-control min-h-[220px] leading-[1.7]"
             />
           </label>
 
-          <label className="upload-zone">
-            <span className="upload-title">Archivos</span>
-            <strong>Arrastra o selecciona material para entrenar</strong>
-            <small>
-              El backend ya procesa texto, PDF, imagenes, audio, video, PPTX, CSV y Excel. En
-              multimedia, Gemini extrae texto o contexto util para indexacion.
+          <label className="relative flex w-full flex-col gap-[14px] rounded-[18px] border border-dashed border-[#2a2a3a] bg-[#111118] p-7 transition duration-200 hover:border-[#5b4cff] hover:bg-[rgba(91,76,255,0.05)]">
+            <span className="text-[11px] uppercase tracking-[1.5px] text-[#55556f]">Archivos</span>
+            <strong className="font-sans text-2xl leading-[1.1]">Arrastra o selecciona material para entrenar</strong>
+            <small className="max-w-[52ch] leading-7 text-[#8e8ea9]">
+              El backend ya procesa texto, PDF, imagenes, audio, video, PPTX, CSV y Excel. En multimedia,
+              Gemini extrae texto o contexto util para indexacion.
             </small>
-            <span className="upload-chip-row">
-              <span className="upload-chip">PDF</span>
-              <span className="upload-chip">Imagenes</span>
-              <span className="upload-chip">Video</span>
-              <span className="upload-chip">Audio</span>
-              <span className="upload-chip">PPTX</span>
-              <span className="upload-chip">Excel</span>
+            <span className="flex flex-wrap gap-[10px]">
+              {["PDF", "Imagenes", "Video", "Audio", "PPTX", "Excel", "CSV"].map((item) => (
+                <span
+                  className="rounded-full border border-[#2a2a3a] px-3 py-2 text-[11px] uppercase tracking-[1px] text-[#8e8ea9]"
+                  key={item}
+                >
+                  {item}
+                </span>
+              ))}
             </span>
-            <span className="file-trigger">Seleccionar archivo</span>
-            <input ref={fileRef} type="file" accept={TRAIN_ACCEPT} />
-            <span className="file-name">{selectedFileName || "Ningun archivo seleccionado"}</span>
+            <span className="w-fit rounded-full bg-[rgba(91,76,255,0.14)] px-4 py-3 font-sans font-bold text-[#ececf7]">
+              Seleccionar archivo
+            </span>
+            <input className="absolute inset-0 cursor-pointer opacity-0" ref={fileRef} type="file" accept={TRAIN_ACCEPT} />
+            <span className="text-xs leading-6 text-[#00e5b0]">{selectedFileName || "Ningun archivo seleccionado"}</span>
           </label>
 
-          <button className="primary-button" type="submit">
+          <button
+            className="w-full min-w-[180px] rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-4 font-sans text-base font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)] md:w-fit"
+            type="submit"
+          >
             Entrenar
           </button>
         </form>
       </section>
 
-      <section className="result-card wide-card">
-        <div className="section-head compact">
-          <div>
-            <p className="section-label">Resultado</p>
-            <h3>Respuesta del backend</h3>
-          </div>
+      <section className={`${panelClass("min-h-[320px]")}`}>
+        <div className="mb-5">
+          <p className="section-kicker">Resultado</p>
+          <h3 className="font-sans text-[1.35rem] tracking-[-0.5px]">Respuesta del backend</h3>
         </div>
 
         {responseData ? (
-          <pre className="response-block">{JSON.stringify(responseData, null, 2)}</pre>
+          <pre className="overflow-auto rounded-[18px] border border-[#2a2a3a] bg-[#111118] p-[18px]">
+            {JSON.stringify(responseData, null, 2)}
+          </pre>
         ) : (
-          <p className="empty-copy">
+          <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
             El backend devuelve aca el detalle de chunks e inserciones para validar el pipeline.
           </p>
         )}
@@ -517,15 +553,17 @@ export function RagShell({ mode }: RagShellProps) {
   }, [isTrainingRoute])
 
   return (
-    <div className="app-shell">
-      <div className="grid-overlay" />
-      <header className="site-header">
-        <a className="logo" href="/">
-          RAG <span>School</span>
-          <em>core</em>
+    <div className="relative min-h-screen px-6 pb-20 pt-8 md:px-6">
+      <div className="bg-grid pointer-events-none fixed inset-0 z-0" />
+
+      <header className="relative z-[1] mx-auto mb-10 flex max-w-[1160px] flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <a className="font-sans text-[32px] font-extrabold tracking-[-1px]" href="/">
+          RAG <span className="text-[#5b4cff]">School</span>
+          <em className="ml-1.5 align-super text-[11px] not-italic uppercase tracking-[2px] text-[#00e5b0]">core</em>
         </a>
-        <div className="header-badge">
-          <span className="badge-dot" />
+
+        <div className="inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[1.2px] text-[#8e8ea9]">
+          <span className="h-2 w-2 rounded-full bg-[#00e5b0] shadow-[0_0_18px_rgba(0,229,176,0.7)]" />
           <span>{isTrainingRoute ? "Training" : "Query"}</span>
         </div>
       </header>
