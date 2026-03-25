@@ -71,10 +71,10 @@ function QueryPage({
 
   return (
     <div className="relative z-[1] mx-auto flex max-w-[1160px] flex-col gap-6">
-      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]`}>
+      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]`}>
         <div>
           <p className="section-kicker">Consulta semantica</p>
-          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4.6rem)] font-extrabold leading-[0.95] tracking-[-2px]">
+          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-[0.95] tracking-[-2px]">
             Explora la base de conocimiento.
           </h1>
           <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
@@ -245,10 +245,10 @@ function TrainPage({
 }: TrainPageProps) {
   return (
     <div className="relative z-[1] mx-auto flex max-w-[1160px] flex-col gap-6">
-      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]`}>
+      <section className={`${panelClass()} grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)]`}>
         <div>
           <p className="section-kicker">Entrenamiento</p>
-          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4.6rem)] font-extrabold leading-[0.95] tracking-[-2px]">
+          <h1 className="mb-4 font-sans text-[clamp(2.4rem,6vw,4rem)] font-extrabold leading-[0.95] tracking-[-2px]">
             Incorpora nuevas fuentes.
           </h1>
           <p className="max-w-[60ch] leading-8 text-[#8e8ea9]">
