@@ -86,6 +86,8 @@ npm run dev
 
 If development ever starts returning `404` for `/_next/static/...` files and the UI loses styles, the local Next cache is likely desynchronized. `npm run dev` now clears `.next` and old `dist` output before starting to reduce that issue.
 
+The local dev wrapper also enables polling-based file watching to behave more consistently on Windows.
+
 Build production:
 
 ```bash

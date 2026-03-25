@@ -86,6 +86,8 @@ npm run dev
 
 Si en desarrollo empiezan a aparecer `404` en `/_next/static/...` y la UI pierde estilos, lo mas probable es que el cache local de Next haya quedado desincronizado. `npm run dev` ahora limpia `.next` y la salida vieja de `dist` antes de arrancar para reducir ese problema.
 
+El wrapper local de desarrollo tambien habilita file watching por polling para comportarse de forma mas consistente en Windows.
+
 Compilar produccion:
 
 ```bash
