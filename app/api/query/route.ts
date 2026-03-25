@@ -17,6 +17,26 @@ function resolveChunkCount(value: unknown) {
   return CHUNK_OPTIONS.includes(parsed) ? parsed : DEFAULT_CHUNK_COUNT
 }
 
+function normalizeChunkContent(content: string) {
+  return content.replace(/\s+/g, " ").trim()
+}
+
+function dedupeMatches(matches: MatchDocument[]) {
+  const seen = new Set<string>()
+
+  return matches.filter((match) => {
+    const normalizedContent = normalizeChunkContent(match.content)
+    const key = `content:${normalizedContent}`
+
+    if (!normalizedContent || seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
@@ -42,11 +62,12 @@ export async function POST(request: Request) {
       throw new Error("No se pudo generar el embedding de la consulta.")
     }
 
-    const matches = await matchDocuments({
+    const rawMatches = await matchDocuments({
       embedding,
       matchCount: chunkCount,
       filter: {},
     })
+    const matches = dedupeMatches(rawMatches).slice(0, chunkCount)
 
     const contexts = matches.map((match: MatchDocument, index: number) => {
       const similarity =

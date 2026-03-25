@@ -557,7 +557,7 @@ export function RagShell({ mode }: RagShellProps) {
       <div className="bg-grid pointer-events-none fixed inset-0 z-0" />
 
       <header className="relative z-[1] mx-auto mb-10 flex max-w-[1160px] flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <a className="font-sans text-[32px] font-extrabold tracking-[-1px]" href="/">
+        <a aria-label="Ir al inicio de RAG School" className="font-sans text-[32px] font-extrabold tracking-[-1px]" href="/">
           RAG <span className="text-[#5b4cff]">School</span>
           <em className="ml-1.5 align-super text-[11px] not-italic uppercase tracking-[2px] text-[#00e5b0]">core</em>
         </a>

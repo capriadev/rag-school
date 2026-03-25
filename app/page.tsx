@@ -2,7 +2,7 @@ import { RagShell } from "../components/rag-shell"
 
 export default function HomePage() {
   return (
-    <main>
+    <main id="main-content">
       <RagShell mode="query" />
     </main>
   )
