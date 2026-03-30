@@ -211,7 +211,7 @@ export function ChatInterface() {
                   <button
                     type="button"
                     onClick={() => setShowAuthModal(true)}
-                    className="rounded-lg bg-[#5b4cff] px-4 py-2 text-sm font-semibold transition hover:bg-[#6c5cff]"
+                    className="rounded-lg bg-[#5b4cff] px-4 py-2 text-xs font-semibold transition hover:bg-[#6c5cff]"
                   >
                     {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
                   </button>
@@ -222,7 +222,7 @@ export function ChatInterface() {
         ) : (
           <>
             {/* Compact header after first message */}
-            <header className="flex items-center justify-between border-b border-[#1f1f23] px-6 py-3">
+            <header className="flex h-14 items-center justify-between border-b border-[#1f1f23] px-6">
               <h1 className="font-sans text-lg font-bold">
                 RAG <span className="text-[#5b4cff]">Custom</span>
               </h1>
@@ -230,7 +230,7 @@ export function ChatInterface() {
               <button
                 type="button"
                 onClick={() => setShowAuthModal(true)}
-                className="rounded-lg bg-[#5b4cff] px-4 py-2 text-sm font-semibold transition hover:bg-[#6c5cff]"
+                className="rounded-lg bg-[#5b4cff] px-4 py-2 text-xs font-semibold transition hover:bg-[#6c5cff]"
               >
                 {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
               </button>
