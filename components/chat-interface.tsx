@@ -3,26 +3,24 @@
 import { useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 
-const CHUNK_OPTIONS = [4, 8, 12, 16]
+const CHUNK_OPTIONS = [1, 3, 5, 7, 9, 15]
 
-interface ChatInterfaceProps {
-  profileName?: string
-}
-
-export function ChatInterface({ profileName = "Custom" }: ChatInterfaceProps) {
+export function ChatInterface() {
   const [question, setQuestion] = useState("")
-  const [chunkCount, setChunkCount] = useState(8)
+  const [chunkCount, setChunkCount] = useState(5)
   const [selectedProfile, setSelectedProfile] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [email, setEmail] = useState("")
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
+  const [hasStartedChat, setHasStartedChat] = useState(false)
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!question.trim()) return
 
-    // Add user message
+    setHasStartedChat(true)
     setMessages((prev) => [...prev, { role: "user", content: question }])
     setQuestion("")
 
@@ -36,161 +34,261 @@ export function ChatInterface({ profileName = "Custom" }: ChatInterfaceProps) {
     setShowAuthModal(false)
   }
 
+  const handleNewChat = () => {
+    setMessages([])
+    setHasStartedChat(false)
+    setQuestion("")
+  }
+
   return (
-    <div className="flex h-screen bg-shell text-[#ececf7]">
-      <div className="bg-grid pointer-events-none fixed inset-0 z-0" />
+    <div className="flex h-screen bg-[#0a0a0f] text-[#ececf7]">
+      {/* Compact Sidebar */}
+      <aside
+        className={`flex flex-col border-r border-[#1f1f23] bg-[#0a0a0f] transition-all duration-200 ${
+          sidebarExpanded ? "w-64" : "w-12"
+        }`}
+      >
+        <div className="flex h-14 items-center justify-center border-b border-[#1f1f23]">
+          <button
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[#8e8ea9] transition hover:bg-[#1f1f23]"
+            title={sidebarExpanded ? "Contraer barra" : "Expandir barra"}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
 
-      {/* Sidebar - Only show when authenticated */}
-      {isAuthenticated && (
-        <aside className="relative z-10 w-64 border-r border-[#2a2a3a] bg-[rgba(17,17,24,0.92)] p-4 backdrop-blur-[16px]">
-          <div className="mb-4">
-            <h3 className="section-kicker">Historial</h3>
-          </div>
+        <div className="flex h-14 items-center justify-center border-b border-[#1f1f23]">
+          <button
+            onClick={handleNewChat}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[#8e8ea9] transition hover:bg-[#1f1f23]"
+            title="Nuevo chat"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Chat list */}
-          <div className="flex-1 space-y-2">
-            {/* TODO: Map saved chats */}
-          </div>
+        {sidebarExpanded && (
+          <div className="flex flex-1 flex-col overflow-hidden p-3">
+            <div className="mb-2 px-2 text-xs font-semibold text-[#55556f]">Barra lateral</div>
 
-          {/* Storage indicator */}
-          <div className="mt-auto border-t border-[#2a2a3a] pt-4">
-            <div className="text-xs text-[#8e8ea9]">
-              <div className="mb-1 font-semibold">Storage</div>
-              <div>0 / 100 MB</div>
-            </div>
-          </div>
-        </aside>
-      )}
-
-      {/* Main content */}
-      <div className="relative z-10 flex flex-1 flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between border-b border-[#2a2a3a] px-6 py-4">
-          <div>
-            <h1 className="font-sans text-[32px] font-extrabold tracking-[-1px]">
-              RAG <span className="text-[#5b4cff]">{profileName}</span>
-            </h1>
-            <p className="text-[11px] uppercase tracking-[2px] text-[#55556f]">Customs</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Profile selector */}
-            <select
-              value={selectedProfile}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-              className="form-control min-h-[50px] cursor-pointer appearance-none px-4 py-2 text-sm"
-            >
-              <option value="">Seleccionar RAG</option>
-              {/* TODO: Load from DB */}
-            </select>
-
-            {/* Auth buttons */}
-            {!isAuthenticated ? (
-              <button
-                className="rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-3 font-sans text-sm font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)]"
-                onClick={() => setShowAuthModal(true)}
-              >
-                Cuenta
-              </button>
-            ) : (
+            {isAuthenticated && (
               <>
-                <button className="rounded-full border border-[#2a2a3a] bg-[rgba(255,255,255,0.03)] px-5 py-3 text-sm font-bold transition hover:border-[#5b4cff] hover:bg-[rgba(91,76,255,0.08)]">
-                  Guardar chat
-                </button>
-                <button className="rounded-full border border-[#2a2a3a] bg-[rgba(255,255,255,0.03)] px-5 py-3 text-sm font-bold transition hover:border-[#5b4cff] hover:bg-[rgba(91,76,255,0.08)]">
-                  Nuevo chat
-                </button>
+                <div className="mb-3 border-t border-[#1f1f23] pt-3">
+                  <div className="px-2 text-xs text-[#8e8ea9]">
+                    <div className="mb-1 font-semibold">Storage</div>
+                    <div>0 / 100 MB</div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  <div className="px-2 text-xs text-[#55556f]">Chats guardados</div>
+                  {/* TODO: Map saved chats */}
+                </div>
               </>
             )}
           </div>
-        </header>
+        )}
+      </aside>
 
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-6 py-8">
-          {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-center text-sm text-[#55556f]">
-                Escribe tu consulta sobre {selectedProfile || "el RAG seleccionado"}
-              </p>
+      {/* Main content */}
+      <div className="flex flex-1 flex-col">
+        {/* Header - Changes after first message */}
+        {!hasStartedChat ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6">
+            <div className="mb-12 text-center">
+              <h1 className="mb-2 font-sans text-5xl font-bold tracking-tight">
+                RAG <span className="text-[#5b4cff]">Custom</span>
+              </h1>
             </div>
-          ) : (
-            <div className="mx-auto max-w-3xl space-y-6">
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`${msg.role === "user" ? "text-right" : "text-left"}`}>
-                  <div
-                    className={`inline-block rounded-2xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "bg-[#5b4cff] text-white"
-                        : "border border-[#2a2a3a] bg-[#111118] text-[#ececf7]"
-                    }`}
+
+            {/* Input area - Centered */}
+            <div className="w-full max-w-3xl">
+              <form onSubmit={handleSubmit}>
+                <div className="relative">
+                  <textarea
+                    value={question}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
+                    placeholder="Escribe tu consulta sobre el RAG seleccionado"
+                    className="w-full resize-none rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-3 pr-24 text-sm leading-relaxed transition focus:border-[#5b4cff] focus:outline-none"
+                    rows={1}
+                    style={{
+                      minHeight: "52px",
+                      maxHeight: "200px",
+                    }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement
+                      target.style.height = "52px"
+                      target.style.height = `${Math.min(target.scrollHeight, 200)}px`
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!question.trim()}
+                    className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
                   >
-                    {msg.content}
-                  </div>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M2 8l12-6-4 12-2-6-6-2z"
+                        fill="currentColor"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Input area */}
-        <div className="border-t border-[#2a2a3a] px-6 py-4">
-          <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
-            <div className="flex gap-3">
-              <textarea
-                value={question}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
-                placeholder="¿Qué necesitas saber?"
-                className="form-control flex-1 resize-none leading-relaxed"
-                rows={1}
-                style={{
-                  minHeight: "50px",
-                  maxHeight: "176px",
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement
-                  target.style.height = "50px"
-                  target.style.height = `${Math.min(target.scrollHeight, 176)}px`
-                }}
-              />
-              
-              {/* Chunk selector */}
-              <select
-                value={chunkCount}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                className="form-control min-h-[50px] w-[120px] cursor-pointer appearance-none text-sm"
-              >
-                {CHUNK_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option} chunks
-                  </option>
-                ))}
-              </select>
+                {/* Selectors below input */}
+                <div className="mt-3 flex items-center gap-3">
+                  <select
+                    value={selectedProfile}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
+                    className="flex-1 cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                  >
+                    <option value="">Seleccionar RAG</option>
+                    {/* TODO: Load from DB */}
+                  </select>
+
+                  <select
+                    value={chunkCount}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                    className="cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                  >
+                    {CHUNK_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option} chunks
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="rounded-lg bg-[#5b4cff] px-4 py-2 text-sm font-semibold transition hover:bg-[#6c5cff]"
+                  >
+                    {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Compact header after first message */}
+            <header className="flex items-center justify-between border-b border-[#1f1f23] px-6 py-3">
+              <h1 className="font-sans text-lg font-bold">
+                RAG <span className="text-[#5b4cff]">Custom</span>
+              </h1>
 
               <button
-                type="submit"
-                className="rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-3 font-sans text-sm font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)]"
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                className="rounded-lg bg-[#5b4cff] px-4 py-2 text-sm font-semibold transition hover:bg-[#6c5cff]"
               >
-                Consultar
+                {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
               </button>
+            </header>
+
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="mx-auto max-w-3xl space-y-6">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    <div className="flex-1">
+                      <div className={`text-sm ${msg.role === "user" ? "font-semibold text-[#ececf7]" : "text-[#b4b4c6]"}`}>
+                        {msg.role === "user" ? "Tú" : "RAG Custom"}
+                      </div>
+                      <div className="mt-1 text-[15px] leading-7">{msg.content}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </form>
-        </div>
+
+            {/* Input area - Bottom */}
+            <div className="border-t border-[#1f1f23] px-6 py-4">
+              <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+                <div className="flex items-end gap-2">
+                  <select
+                    value={selectedProfile}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
+                    className="cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                  >
+                    <option value="">RAG</option>
+                    {/* TODO: Load from DB */}
+                  </select>
+
+                  <select
+                    value={chunkCount}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                    className="cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                  >
+                    {CHUNK_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="relative flex-1">
+                    <textarea
+                      value={question}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
+                      placeholder="Escribe tu consulta..."
+                      className="w-full resize-none rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-3 pr-12 text-sm leading-relaxed transition focus:border-[#5b4cff] focus:outline-none"
+                      rows={1}
+                      style={{
+                        minHeight: "44px",
+                        maxHeight: "200px",
+                      }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement
+                        target.style.height = "44px"
+                        target.style.height = `${Math.min(target.scrollHeight, 200)}px`
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!question.trim()}
+                      className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M2 8l12-6-4 12-2-6-6-2z"
+                          fill="currentColor"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="panel w-full max-w-md p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-[#2a2a3a] bg-[#111118] p-8">
             <h2 className="mb-6 font-sans text-2xl font-bold">Iniciar sesión</h2>
             <form onSubmit={handleAuth} className="space-y-4">
               <div>
-                <label className="section-kicker mb-2 block">Email</label>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#55556f]">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="form-control"
+                  className="w-full rounded-lg border border-[#2a2a3a] bg-[#0a0a0f] px-4 py-3 transition focus:border-[#5b4cff] focus:outline-none"
                   required
                 />
               </div>
@@ -198,13 +296,13 @@ export function ChatInterface({ profileName = "Custom" }: ChatInterfaceProps) {
                 <button
                   type="button"
                   onClick={() => setShowAuthModal(false)}
-                  className="flex-1 rounded-full border border-[#2a2a3a] bg-[rgba(255,255,255,0.03)] px-6 py-3 font-sans text-sm font-bold transition hover:border-[#5b4cff]"
+                  className="flex-1 rounded-lg border border-[#2a2a3a] px-6 py-3 text-sm font-semibold transition hover:border-[#5b4cff]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-3 font-sans text-sm font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5"
+                  className="flex-1 rounded-lg bg-[#5b4cff] px-6 py-3 text-sm font-semibold transition hover:bg-[#6c5cff]"
                 >
                   Entrar
                 </button>
