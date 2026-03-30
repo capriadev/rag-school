@@ -1,9 +1,9 @@
-import { RagShell } from "../components/rag-shell"
+import { ChatInterface } from "../components/chat-interface"
 
 export default function HomePage() {
   return (
-    <main id="main-content">
-      <RagShell mode="query" />
+    <main>
+      <ChatInterface />
     </main>
   )
 }
