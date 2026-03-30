@@ -114,11 +114,14 @@ export function ChatInterface() {
                     value={question}
                     onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
                     placeholder="Escribe tu consulta sobre el RAG seleccionado"
-                    className="w-full resize-none rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-3 pr-24 text-sm leading-relaxed transition focus:border-[#5b4cff] focus:outline-none"
+                    className="w-full resize-none rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-3 pr-12 text-sm leading-relaxed transition focus:border-[#5b4cff] focus:outline-none"
                     rows={1}
                     style={{
                       minHeight: "52px",
                       maxHeight: "200px",
+                      overflow: "auto",
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "#2a2a3a #111118",
                     }}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement
@@ -145,26 +148,48 @@ export function ChatInterface() {
 
                 {/* Selectors below input */}
                 <div className="mt-3 flex items-center gap-3">
-                  <select
-                    value={selectedProfile}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                    className="flex-1 cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
-                  >
-                    <option value="">Seleccionar RAG</option>
-                    {/* TODO: Load from DB */}
-                  </select>
+                  <div className="relative flex-1">
+                    <select
+                      value={selectedProfile}
+                      onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
+                      className="w-full cursor-pointer appearance-none rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 pr-8 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                    >
+                      <option value="">Seleccionar RAG</option>
+                      {/* TODO: Load from DB */}
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
 
-                  <select
-                    value={chunkCount}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                    className="cursor-pointer rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
-                  >
-                    {CHUNK_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option} chunks
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={chunkCount}
+                      onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                      className="cursor-pointer appearance-none rounded-lg border border-[#2a2a3a] bg-[#111118] px-3 py-2 pr-8 text-sm transition hover:border-[#5b4cff] focus:border-[#5b4cff] focus:outline-none"
+                    >
+                      {CHUNK_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option} chunks
+                        </option>
+                      ))}
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
 
                   <button
                     type="button"
