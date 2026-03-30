@@ -5,6 +5,14 @@ import type { ChangeEvent, FormEvent } from "react"
 
 const CHUNK_OPTIONS = [1, 3, 5, 7, 9, 15]
 
+const PLACEHOLDERS = [
+  "Escribe tu consulta...",
+  "¿Qué necesitas saber?",
+  "Pregunta lo que quieras...",
+  "¿En qué puedo ayudarte?",
+  "Hazme una pregunta...",
+]
+
 export function ChatInterface() {
   const [question, setQuestion] = useState("")
   const [chunkCount, setChunkCount] = useState(5)
@@ -15,6 +23,13 @@ export function ChatInterface() {
   const [email, setEmail] = useState("")
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [hasStartedChat, setHasStartedChat] = useState(false)
+  const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
+
+  // Rotate placeholder on mount
+  useState(() => {
+    const randomIndex = Math.floor(Math.random() * PLACEHOLDERS.length)
+    setPlaceholder(PLACEHOLDERS[randomIndex])
+  })
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -137,62 +152,13 @@ export function ChatInterface() {
             <div className="w-full max-w-3xl">
               <form onSubmit={handleSubmit}>
                 <div className="relative">
-                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff] md:flex-row md:items-center">
-                    {/* RAG Select - Compact */}
-                    <div className="relative md:order-1">
-                      <select
-                        value={selectedProfile}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                        className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                      >
-                        <option value="">RAG</option>
-                        {/* TODO: Load from DB */}
-                      </select>
-                      <svg
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                        width="10"
-                        height="10"
-                        viewBox="0 0 10 10"
-                        fill="none"
-                      >
-                        <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-2 md:block" />
-
-                    {/* Chunks Select - Compact */}
-                    <div className="relative md:order-3">
-                      <select
-                        value={chunkCount}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                        className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                      >
-                        {CHUNK_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option} chunks
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                        width="10"
-                        height="10"
-                        viewBox="0 0 10 10"
-                        fill="none"
-                      >
-                        <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-4 md:block" />
-
-                    {/* Textarea */}
+                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff]">
+                    {/* Textarea - Always first on mobile and desktop */}
                     <textarea
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
-                      placeholder="Escribe tu consulta sobre el RAG seleccionado"
-                      className="order-first flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none md:order-5"
+                      placeholder={placeholder}
+                      className="w-full resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -208,22 +174,74 @@ export function ChatInterface() {
                       }}
                     />
 
-                    {/* Send Button */}
-                    <button
-                      type="submit"
-                      disabled={!question.trim()}
-                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center self-end rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40 md:order-6 md:self-auto"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path
-                          d="M1.5 7l11-5-3.5 11-1.75-5.25L1.5 7z"
-                          fill="currentColor"
-                          stroke="currentColor"
-                          strokeWidth="0.8"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+                    {/* Selects and button row */}
+                    <div className="flex items-center gap-2">
+                      {/* RAG Select */}
+                      <div className="relative">
+                        <select
+                          value={selectedProfile}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
+                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                        >
+                          <option value="">RAG</option>
+                          {/* TODO: Load from DB */}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          fill="none"
+                        >
+                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="h-4 w-px bg-[#2a2a3a]" />
+
+                      {/* Chunks Select */}
+                      <div className="relative">
+                        <select
+                          value={chunkCount}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                        >
+                          {CHUNK_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option} chunks
+                            </option>
+                          ))}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          fill="none"
+                        >
+                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="flex-1" />
+
+                      {/* Send Button */}
+                      <button
+                        type="submit"
+                        disabled={!question.trim()}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M1.5 7l11-5-3.5 11-1.75-5.25L1.5 7z"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth="0.8"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -258,62 +276,13 @@ export function ChatInterface() {
             <div className="relative border-t border-[#1f1f23] px-6 py-4">
               <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
                 <div className="relative">
-                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff] md:flex-row md:items-center">
-                    {/* RAG Select - Compact */}
-                    <div className="relative md:order-1">
-                      <select
-                        value={selectedProfile}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                        className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                      >
-                        <option value="">RAG</option>
-                        {/* TODO: Load from DB */}
-                      </select>
-                      <svg
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                        width="10"
-                        height="10"
-                        viewBox="0 0 10 10"
-                        fill="none"
-                      >
-                        <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-2 md:block" />
-
-                    {/* Chunks Select - Compact */}
-                    <div className="relative md:order-3">
-                      <select
-                        value={chunkCount}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                        className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                      >
-                        {CHUNK_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option} chunks
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                        width="10"
-                        height="10"
-                        viewBox="0 0 10 10"
-                        fill="none"
-                      >
-                        <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-4 md:block" />
-
-                    {/* Textarea */}
+                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff]">
+                    {/* Textarea - Always first */}
                     <textarea
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
-                      placeholder="Escribe tu consulta..."
-                      className="order-first flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none md:order-5"
+                      placeholder={placeholder}
+                      className="w-full resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -329,22 +298,74 @@ export function ChatInterface() {
                       }}
                     />
 
-                    {/* Send Button */}
-                    <button
-                      type="submit"
-                      disabled={!question.trim()}
-                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center self-end rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40 md:order-6 md:self-auto"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path
-                          d="M1.5 7l11-5-3.5 11-1.75-5.25L1.5 7z"
-                          fill="currentColor"
-                          stroke="currentColor"
-                          strokeWidth="0.8"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+                    {/* Selects and button row */}
+                    <div className="flex items-center gap-2">
+                      {/* RAG Select */}
+                      <div className="relative">
+                        <select
+                          value={selectedProfile}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
+                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                        >
+                          <option value="">RAG</option>
+                          {/* TODO: Load from DB */}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          fill="none"
+                        >
+                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="h-4 w-px bg-[#2a2a3a]" />
+
+                      {/* Chunks Select */}
+                      <div className="relative">
+                        <select
+                          value={chunkCount}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                        >
+                          {CHUNK_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option} chunks
+                            </option>
+                          ))}
+                        </select>
+                        <svg
+                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          fill="none"
+                        >
+                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="flex-1" />
+
+                      {/* Send Button */}
+                      <button
+                        type="submit"
+                        disabled={!question.trim()}
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path
+                            d="M1.5 7l11-5-3.5 11-1.75-5.25L1.5 7z"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth="0.8"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </form>
