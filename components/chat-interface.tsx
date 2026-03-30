@@ -63,7 +63,8 @@ export function ChatInterface() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
             <path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          {sidebarExpanded && <span className="text-sm font-medium">Ocultar barra lateral</span>}
+          {sidebarExpanded && <span className="hidden text-sm font-medium md:inline">Ocultar barra lateral</span>}
+          {sidebarExpanded && <span className="text-sm font-medium md:hidden">Ocultar</span>}
         </button>
 
         {/* New chat button */}
@@ -97,6 +98,19 @@ export function ChatInterface() {
             )}
           </div>
         )}
+
+        {/* Account button at bottom */}
+        <button
+          onClick={() => setShowAuthModal(true)}
+          className="mt-auto flex h-14 w-full items-center gap-3 border-t border-[#1f1f23] bg-[#5b4cff] px-3 text-white transition hover:bg-[#6c5cff]"
+          title={isAuthenticated ? "Cuenta" : "Conectar cuenta"}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+            <circle cx="8" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M3 13c0-2.5 2-4 5-4s5 1.5 5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          {sidebarExpanded && <span className="text-sm font-medium">{isAuthenticated ? "Cuenta" : "Conectar cuenta"}</span>}
+        </button>
       </aside>
 
       {/* Main content */}
@@ -104,6 +118,15 @@ export function ChatInterface() {
         {/* Header - Changes after first message */}
         {!hasStartedChat ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6">
+            {/* Account button above title */}
+            <button
+              type="button"
+              onClick={() => setShowAuthModal(true)}
+              className="mb-8 rounded-lg bg-[#5b4cff] px-4 py-2 text-xs font-semibold transition hover:bg-[#6c5cff]"
+            >
+              {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
+            </button>
+
             <div className="mb-12 text-center">
               <h1 className="mb-2 font-sans text-5xl font-bold tracking-tight">
                 RAG <span className="text-[#5b4cff]">Custom</span>
@@ -114,9 +137,9 @@ export function ChatInterface() {
             <div className="w-full max-w-3xl">
               <form onSubmit={handleSubmit}>
                 <div className="relative">
-                  <div className="flex items-center gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-3 py-2 transition focus-within:border-[#5b4cff]">
+                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff] md:flex-row md:items-center">
                     {/* RAG Select - Compact */}
-                    <div className="relative">
+                    <div className="relative md:order-1">
                       <select
                         value={selectedProfile}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
@@ -136,10 +159,10 @@ export function ChatInterface() {
                       </svg>
                     </div>
 
-                    <div className="h-4 w-px bg-[#2a2a3a]" />
+                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-2 md:block" />
 
                     {/* Chunks Select - Compact */}
-                    <div className="relative">
+                    <div className="relative md:order-3">
                       <select
                         value={chunkCount}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
@@ -162,14 +185,14 @@ export function ChatInterface() {
                       </svg>
                     </div>
 
-                    <div className="h-4 w-px bg-[#2a2a3a]" />
+                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-4 md:block" />
 
                     {/* Textarea */}
                     <textarea
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
                       placeholder="Escribe tu consulta sobre el RAG seleccionado"
-                      className="flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
+                      className="order-first flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none md:order-5"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -189,7 +212,7 @@ export function ChatInterface() {
                     <button
                       type="submit"
                       disabled={!question.trim()}
-                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
+                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center self-end rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40 md:order-6 md:self-auto"
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path
@@ -203,17 +226,6 @@ export function ChatInterface() {
                     </button>
                   </div>
                 </div>
-
-                {/* Account button below */}
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setShowAuthModal(true)}
-                    className="rounded-lg bg-[#5b4cff] px-4 py-2 text-xs font-semibold transition hover:bg-[#6c5cff]"
-                  >
-                    {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
-                  </button>
-                </div>
               </form>
             </div>
           </div>
@@ -224,14 +236,6 @@ export function ChatInterface() {
               <h1 className="font-sans text-lg font-bold">
                 RAG <span className="text-[#5b4cff]">Custom</span>
               </h1>
-
-              <button
-                type="button"
-                onClick={() => setShowAuthModal(true)}
-                className="rounded-lg bg-[#5b4cff] px-4 py-2 text-xs font-semibold transition hover:bg-[#6c5cff]"
-              >
-                {isAuthenticated ? "Cuenta" : "Conectar cuenta"}
-              </button>
             </header>
 
             {/* Messages area */}
@@ -254,9 +258,9 @@ export function ChatInterface() {
             <div className="relative border-t border-[#1f1f23] px-6 py-4">
               <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
                 <div className="relative">
-                  <div className="flex items-center gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-3 py-2 transition focus-within:border-[#5b4cff]">
+                  <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] p-3 transition focus-within:border-[#5b4cff] md:flex-row md:items-center">
                     {/* RAG Select - Compact */}
-                    <div className="relative">
+                    <div className="relative md:order-1">
                       <select
                         value={selectedProfile}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
@@ -276,10 +280,10 @@ export function ChatInterface() {
                       </svg>
                     </div>
 
-                    <div className="h-4 w-px bg-[#2a2a3a]" />
+                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-2 md:block" />
 
                     {/* Chunks Select - Compact */}
-                    <div className="relative">
+                    <div className="relative md:order-3">
                       <select
                         value={chunkCount}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
@@ -302,14 +306,14 @@ export function ChatInterface() {
                       </svg>
                     </div>
 
-                    <div className="h-4 w-px bg-[#2a2a3a]" />
+                    <div className="hidden h-4 w-px bg-[#2a2a3a] md:order-4 md:block" />
 
                     {/* Textarea */}
                     <textarea
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
                       placeholder="Escribe tu consulta..."
-                      className="flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
+                      className="order-first flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none md:order-5"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -329,7 +333,7 @@ export function ChatInterface() {
                     <button
                       type="submit"
                       disabled={!question.trim()}
-                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40"
+                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center self-end rounded-lg bg-[#5b4cff] text-white transition hover:bg-[#6c5cff] disabled:opacity-40 md:order-6 md:self-auto"
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path
