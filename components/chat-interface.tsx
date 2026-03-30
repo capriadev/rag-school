@@ -24,6 +24,12 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, { role: "user", content: question }])
     setQuestion("")
 
+    // Reset textarea height
+    const textareas = document.querySelectorAll('textarea')
+    textareas.forEach((textarea) => {
+      textarea.style.height = "28px"
+    })
+
     // TODO: Call API and add assistant response
   }
 
