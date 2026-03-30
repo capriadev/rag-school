@@ -39,6 +39,21 @@
   textarea {
     resize: vertical;
   }
+
+  /* Custom select dropdown styles */
+  select option {
+    background: #111118;
+    color: #ececf7;
+    padding: 8px;
+  }
+
+  select option:hover {
+    background: #1f1f23;
+  }
+
+  select option:checked {
+    background: #2a2a3a;
+  }
 }
 
 @layer utilities {
