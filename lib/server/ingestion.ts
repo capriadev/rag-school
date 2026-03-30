@@ -1,6 +1,6 @@
 import path from "node:path"
 import { extractSpreadsheetText, extractCsvText, extractPresentationText } from "./office"
-import { extractPdfText } from "./pdf"
+// import { extractPdfText } from "./pdf"
 import { extractMultimodalText } from "./multimodal"
 import type { SourceInput } from "../shared/types"
 
@@ -19,11 +19,7 @@ export async function extractSourceFromFile(file: File): Promise<SourceInput> {
   const extension = getExtension(file.name)
 
   if (file.type === "application/pdf" || extension === ".pdf") {
-    return {
-      sourceType: "pdf",
-      sourceName: file.name,
-      content: await extractPdfText(buffer),
-    }
+    throw new Error("PDFs deben procesarse via workflow n8n. Usa el boton 'Workflow n8n'.")
   }
 
   if (file.type === "text/csv" || extension === ".csv") {

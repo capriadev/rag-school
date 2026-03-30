@@ -7,7 +7,7 @@ import type { ChangeEvent, FormEvent, MutableRefObject } from "react"
 import type { QueryResponse, Status, TrainMetricsResponse, TrainResponse, VectorStoreMetrics } from "../lib/shared/types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
-const TRAIN_ACCEPT = ".pdf,.pptx,.xls,.xlsx,.ods,.csv,image/*,video/*,audio/*"
+const TRAIN_ACCEPT = ".pptx,.xls,.xlsx,.ods,.csv,image/*,video/*,audio/*"
 
 function panelClass(extra = "") {
   return `panel p-7 md:p-8 ${extra}`.trim()
@@ -218,6 +218,7 @@ interface TrainPageProps {
   trainText: string
   setTrainText: (value: string) => void
   handleTrain: (event: FormEvent<HTMLFormElement>) => Promise<void>
+  handleWorkflowTrain: (event: FormEvent<HTMLFormElement>) => Promise<void>
   trainingStatus: Status
   responseData: TrainResponse | QueryResponse | null
   metrics: VectorStoreMetrics | null
@@ -235,6 +236,7 @@ function TrainPage({
   trainText,
   setTrainText,
   handleTrain,
+  handleWorkflowTrain,
   trainingStatus,
   responseData,
   metrics,
@@ -257,7 +259,7 @@ function TrainPage({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {["Texto", "Imagenes", "Video", "Audio", "PDF", "PPTX", "Excel", "CSV"].map((item) => (
+          {["Texto", "Imagenes", "Video", "Audio", "PPTX", "Excel", "CSV"].map((item) => (
             <span
               className="rounded-[18px] border border-[#2a2a3a] bg-[rgba(255,255,255,0.02)] px-[18px] py-4 font-sans text-[1.1rem] font-bold"
               key={item}
@@ -265,6 +267,12 @@ function TrainPage({
               {item}
             </span>
           ))}
+          <span
+            className="rounded-[18px] border border-[#ff4c6b] bg-[rgba(255,76,107,0.08)] px-[18px] py-4 font-sans text-[1.1rem] font-bold text-[#ff4c6b]"
+            title="Usar workflow n8n"
+          >
+            PDF*
+          </span>
         </div>
       </section>
 
@@ -340,8 +348,7 @@ function TrainPage({
             <span className="text-[11px] uppercase tracking-[1.5px] text-[#55556f]">Archivos</span>
             <strong className="font-sans text-2xl leading-[1.1]">Arrastra o selecciona material para entrenar</strong>
             <small className="max-w-[52ch] leading-7 text-[#8e8ea9]">
-              El backend ya procesa texto, PDF, imagenes, audio, video, PPTX, CSV y Excel. En multimedia,
-              Gemini extrae texto o contexto util para indexacion.
+              El backend procesa texto, imagenes, audio, video, PPTX, CSV y Excel. Para PDFs usa el botón "Workflow n8n".
             </small>
             <span className="flex flex-wrap gap-[10px]">
               {["PDF", "Imagenes", "Video", "Audio", "PPTX", "Excel", "CSV"].map((item) => (
@@ -360,12 +367,24 @@ function TrainPage({
             <span className="text-xs leading-6 text-[#00e5b0]">{selectedFileName || "Ningun archivo seleccionado"}</span>
           </label>
 
-          <button
-            className="w-full min-w-[180px] rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-4 font-sans text-base font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)] md:w-fit"
-            type="submit"
-          >
-            Entrenar
-          </button>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <button
+              className="w-full min-w-[180px] rounded-full bg-gradient-to-br from-[#5b4cff] to-[#7a6cff] px-6 py-4 font-sans text-base font-bold text-white shadow-[0_18px_40px_rgba(91,76,255,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_rgba(91,76,255,0.36)] md:w-fit"
+              type="submit"
+            >
+              Entrenar
+            </button>
+            <button
+              className="w-full min-w-[180px] rounded-full border border-[#2a2a3a] bg-[rgba(255,255,255,0.03)] px-6 py-4 font-sans text-base font-bold text-[#ececf7] transition duration-200 hover:-translate-y-0.5 hover:border-[#5b4cff] hover:bg-[rgba(91,76,255,0.08)] md:w-fit"
+              type="button"
+              onClick={(e) => {
+                const form = e.currentTarget.closest('form')
+                if (form) handleWorkflowTrain(e as any)
+              }}
+            >
+              Workflow n8n
+            </button>
+          </div>
         </form>
       </section>
 
@@ -495,6 +514,41 @@ export function RagShell({ mode }: RagShellProps) {
     }
   }
 
+  async function handleWorkflowTrain(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setTrainingStatus("processing")
+    setResponseData(null)
+
+    const form = new FormData()
+    form.append("text", trainText)
+    const file = fileRef.current?.files?.[0]
+    if (file) form.append("file", file)
+
+    try {
+      const res = await fetch("http://localhost:5678/webhook/entrenar", {
+        method: "POST",
+        body: form,
+      })
+
+      const text = await res.text()
+      const payload = parseResponsePayload<TrainResponse>(text)
+
+      if (!res.ok) {
+        throw new Error(payload?.error || "Error al entrenar via workflow")
+      }
+
+      setResponseData(payload)
+      setTrainingStatus("success")
+      void loadTrainMetrics()
+    } catch (err) {
+      console.error(err)
+      setTrainingStatus("error")
+      setResponseData({
+        error: err instanceof Error ? err.message : "Error al entrenar via workflow",
+      })
+    }
+  }
+
   async function handleConsult(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setResponseData(null)
@@ -573,6 +627,7 @@ export function RagShell({ mode }: RagShellProps) {
           trainText={trainText}
           setTrainText={setTrainText}
           handleTrain={handleTrain}
+          handleWorkflowTrain={handleWorkflowTrain}
           trainingStatus={trainingStatus}
           responseData={responseData}
           metrics={metrics}
