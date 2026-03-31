@@ -182,9 +182,14 @@ export function ChatInterface() {
                     />
 
                     {/* Selects and button row */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-2">
                       {/* RAG Select */}
-                      <div className="relative">
+                      <div className="relative flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                          <path d="M10.7 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v4.1"/>
+                          <path d="m21 21-1.9-1.9"/>
+                          <circle cx="17" cy="17" r="3"/>
+                        </svg>
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
@@ -207,7 +212,12 @@ export function ChatInterface() {
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
                       {/* Chunks Select */}
-                      <div className="relative">
+                      <div className="relative flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                        </svg>
                         <select
                           value={chunkCount}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
@@ -308,7 +318,12 @@ export function ChatInterface() {
                     {/* Selects and button row */}
                     <div className="flex items-center gap-2">
                       {/* RAG Select */}
-                      <div className="relative">
+                      <div className="relative flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                          <path d="M10.7 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v4.1"/>
+                          <path d="m21 21-1.9-1.9"/>
+                          <circle cx="17" cy="17" r="3"/>
+                        </svg>
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
@@ -331,7 +346,12 @@ export function ChatInterface() {
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
                       {/* Chunks Select */}
-                      <div className="relative">
+                      <div className="relative flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                        </svg>
                         <select
                           value={chunkCount}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
