@@ -3,7 +3,14 @@
 import { useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 
-const CHUNK_OPTIONS = [1, 3, 5, 7, 9, 15]
+const CHUNK_OPTIONS = [
+  { value: 3, label: "Preciso" },
+  { value: 5, label: "Balanceado" },
+  { value: 7, label: "Completo" },
+  { value: 9, label: "Amplio" },
+  { value: 12, label: "Extendido" },
+  { value: 15, label: "Exhaustivo" },
+]
 
 const PLACEHOLDERS = [
   "Escribe tu consulta...",
@@ -207,8 +214,8 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           {CHUNK_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option} chunks
+                            <option key={option.value} value={option.value}>
+                              {option.label}
                             </option>
                           ))}
                         </select>
@@ -331,8 +338,8 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           {CHUNK_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option} chunks
+                            <option key={option.value} value={option.value}>
+                              {option.label}
                             </option>
                           ))}
                         </select>
