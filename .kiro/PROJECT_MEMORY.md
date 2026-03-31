@@ -243,10 +243,11 @@ rag-school/
 - Admin manages training, users manage their own inference costs
 
 ### 4. Multi-Profile Architecture
-- Each profile = separate vector store table in Supabase
-- Examples: `documents_school`, `documents_civil`, `documents_uba`
-- Profile metadata stored in `profiles` table
+- Single `documents` table with `id_profile` foreign key
+- `profiles` table stores metadata: name, description, active, doc_count
+- New profiles added via INSERT (no schema changes needed)
 - Users select profile from dropdown
+- Function `match_documents(query_embedding, profile_id, match_count, filter)`
 
 ### 5. Optional Chat History
 - Firebase Realtime Database
@@ -284,11 +285,15 @@ rag-school/
 
 ## What Still Needs to Be Done
 
-### 1. Database Schema Migration
+### 1. Database Schema Migration - COMPLETED
+  - Tables: `users`, `profiles`, `documents` with normalized structure
+  - IVFFlat index (HNSW has 2000 dim limit, Gemini uses 3072)
+  - Trigger for `doc_count` auto-sync
+  - Function `match_documents(profile_id)` with dynamic `ivfflat.probes`
 **Priority**: HIGH
 
 **Tasks**:
-- [ ] Create `profiles` table in Supabase
+- [x] Create `profiles` table in Supabase
   - Columns: id, name, description, table_name, created_at
 - [ ] Create `users` table in Supabase
   - Columns: id, firebase_uid, email, groq_api_key_encrypted, gemini_api_key_encrypted, created_at
@@ -578,7 +583,7 @@ docker stop n8n      # Stop n8n container
 
 **UI**: ✅ Complete and professional  
 **Backend**: ⚠️ Needs multi-profile support  
-**Database**: ❌ Needs schema migration  
+**Database**: ✅ Schema migrated - normalized structure with users, profiles, documents tables  
 **Auth**: ❌ Not implemented  
 **Chat History**: ❌ Not implemented  
 **Training**: ⚠️ Works but needs separation  
@@ -592,5 +597,5 @@ docker stop n8n      # Stop n8n container
 
 ---
 
-**Last Updated**: Session ending (transformation from RAG School to RAG Customs UI complete)  
+**Last Updated**: Database schema migration completed - normalized multi-profile structure with IVFFlat index  
 **Status**: Ready for next session - UI foundation solid, backend work needed
