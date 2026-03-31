@@ -165,7 +165,7 @@ export function ChatInterface() {
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
                       placeholder={placeholder}
-                      className="w-full resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
+                      className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -182,7 +182,7 @@ export function ChatInterface() {
                     />
 
                     {/* Selects and button row */}
-                    <div className="flex items-center gap-2 ml-2">
+                    <div className="flex items-center gap-2">
                       {/* RAG Select */}
                       <div className="relative flex items-center gap-1">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
@@ -193,7 +193,7 @@ export function ChatInterface() {
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           <option value="">RAG</option>
                           {/* TODO: Load from DB */}
@@ -221,7 +221,7 @@ export function ChatInterface() {
                         <select
                           value={chunkCount}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           {CHUNK_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -299,7 +299,7 @@ export function ChatInterface() {
                       value={question}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
                       placeholder={placeholder}
-                      className="w-full resize-none bg-transparent px-2 py-1 text-sm leading-relaxed focus:outline-none"
+                      className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
                       style={{
                         minHeight: "28px",
@@ -327,7 +327,7 @@ export function ChatInterface() {
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           <option value="">RAG</option>
                           {/* TODO: Load from DB */}
@@ -355,7 +355,7 @@ export function ChatInterface() {
                         <select
                           value={chunkCount}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                          className="cursor-pointer appearance-none bg-transparent px-2 py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
                         >
                           {CHUNK_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
