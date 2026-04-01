@@ -42,15 +42,27 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       question?: unknown
       chunkCount?: unknown
+      profileId?: unknown
     }
     const question = String(body.question || "").trim()
     const chunkCount = resolveChunkCount(body.chunkCount)
+    const profileId = Number(body.profileId)
 
     if (!question) {
       return NextResponse.json(
         {
           success: false,
           error: "La pregunta es obligatoria.",
+        },
+        { status: 400 },
+      )
+    }
+
+    if (!profileId || !Number.isInteger(profileId) || profileId <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "El ID del perfil es obligatorio.",
         },
         { status: 400 },
       )
@@ -64,6 +76,7 @@ export async function POST(request: Request) {
 
     const rawMatches = await matchDocuments({
       embedding,
+      profileId,
       matchCount: chunkCount,
       filter: {},
     })

@@ -71,15 +71,18 @@ export async function insertDocuments(documents: InsertDocument[]): Promise<{ in
 
 export async function matchDocuments({
   embedding,
+  profileId,
   matchCount,
   filter = {},
 }: {
   embedding: number[]
+  profileId: number
   matchCount: number
   filter?: Record<string, unknown>
 }): Promise<MatchDocument[]> {
-  const { data, error } = await supabase.rpc(config.matchFunction, {
+  const { data, error } = await supabase.rpc("match_documents", {
     query_embedding: toPgVector(embedding),
+    profile_id: profileId,
     match_count: matchCount,
     filter,
   })
