@@ -260,7 +260,7 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
                           <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
-                          <option value="chat">💬 CHAT</option>
+                          <option value="chat">Chat</option>
                           {profiles.map((profile) => (
                             <option key={profile.id_profile} value={profile.id_profile}>
                               {profile.name}
@@ -402,7 +402,7 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
                           <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
-                          <option value="chat">💬 CHAT</option>
+                          <option value="chat">Chat</option>
                           {profiles.map((profile) => (
                             <option key={profile.id_profile} value={profile.id_profile}>
                               {profile.name}

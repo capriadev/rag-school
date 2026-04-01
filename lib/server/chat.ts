@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai"
 import { config } from "./config"
 
-const GEMMA_MODEL = "gemma-3-24b-it"
+const GEMMA_MODEL = "gemma-2b-it"
 
 export async function generateChatResponse(message: string): Promise<string> {
   const apiKey = config.geminiApiKeys[0]
