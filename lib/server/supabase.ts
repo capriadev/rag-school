@@ -125,8 +125,22 @@ export async function exportVectorStoreSnapshot(): Promise<VectorDocumentRow[]> 
   return listDocuments(true)
 }
 
+export async function getProfiles(): Promise<Array<{ id_profile: number; name: string; description: string | null }>> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id_profile, name, description")
+    .eq("active", true)
+    .order("name")
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data || []
+}
+
 export async function pingVectorStore(): Promise<{ reachable: boolean; rowsChecked: number }> {
-  const { data, error } = await supabase.from(config.documentsTable).select("id").limit(1)
+  const { data, error } = await supabase.from("documents").select("id_doc").limit(1)
 
   if (error) {
     throw new Error(error.message)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 
 const CHUNK_OPTIONS = [
@@ -31,12 +31,32 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
+  const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
+  const [profilesLoading, setProfilesLoading] = useState(true)
+
+  // Load profiles from API on mount
+  useEffect(() => {
+    async function loadProfiles() {
+      try {
+        const response = await fetch("/api/profiles")
+        const data = await response.json()
+        if (data.success && data.profiles) {
+          setProfiles(data.profiles)
+        }
+      } catch (error) {
+        console.error("Failed to load profiles:", error)
+      } finally {
+        setProfilesLoading(false)
+      }
+    }
+    loadProfiles()
+  }, [])
 
   // Rotate placeholder on mount
-  useState(() => {
+  useEffect(() => {
     const randomIndex = Math.floor(Math.random() * PLACEHOLDERS.length)
     setPlaceholder(PLACEHOLDERS[randomIndex])
-  })
+  }, [])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -193,10 +213,15 @@ export function ChatInterface() {
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          disabled={profilesLoading}
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
-                          <option value="">RAG</option>
-                          {/* TODO: Load from DB */}
+                          <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
+                          {profiles.map((profile) => (
+                            <option key={profile.id_profile} value={profile.id_profile}>
+                              {profile.name}
+                            </option>
+                          ))}
                         </select>
                         <svg
                           className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
@@ -327,10 +352,15 @@ export function ChatInterface() {
                         <select
                           value={selectedProfile}
                           onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedProfile(e.target.value)}
-                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          disabled={profilesLoading}
+                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
-                          <option value="">RAG</option>
-                          {/* TODO: Load from DB */}
+                          <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
+                          {profiles.map((profile) => (
+                            <option key={profile.id_profile} value={profile.id_profile}>
+                              {profile.name}
+                            </option>
+                          ))}
                         </select>
                         <svg
                           className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
