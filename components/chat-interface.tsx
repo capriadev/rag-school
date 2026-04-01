@@ -72,7 +72,50 @@ export function ChatInterface() {
       textarea.style.height = "28px"
     })
 
-    // TODO: Call API and add assistant response
+    // CHAT mode - use AI Studio Gemma
+    if (selectedProfile === "chat") {
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question }),
+        })
+        const data = await response.json()
+        if (data.success) {
+          setMessages((prev) => [...prev, { role: "assistant", content: data.response }])
+        } else {
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${data.error}` }])
+        }
+      } catch (error) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión con el servidor." }])
+      }
+      return
+    }
+
+    // RAG mode - use query API with profile and chunks
+    if (selectedProfile) {
+      try {
+        const response = await fetch("/api/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            chunkCount,
+            profileId: Number(selectedProfile),
+          }),
+        })
+        const data = await response.json()
+        if (data.success) {
+          setMessages((prev) => [...prev, { role: "assistant", content: data.answer }])
+        } else {
+          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${data.error}` }])
+        }
+      } catch (error) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión con el servidor." }])
+      }
+    } else {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Por favor selecciona un perfil RAG." }])
+    }
   }
 
   const handleAuth = async (e: FormEvent<HTMLFormElement>) => {
@@ -217,6 +260,7 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
                           <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
+                          <option value="chat">💬 CHAT</option>
                           {profiles.map((profile) => (
                             <option key={profile.id_profile} value={profile.id_profile}>
                               {profile.name}
@@ -236,34 +280,36 @@ export function ChatInterface() {
 
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
-                      {/* Chunks Select */}
-                      <div className="relative flex items-center gap-1">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
-                          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
-                          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
-                          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
-                        </svg>
-                        <select
-                          value={chunkCount}
-                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                        >
-                          {CHUNK_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <svg
-                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                          width="10"
-                          height="10"
-                          viewBox="0 0 10 10"
-                          fill="none"
-                        >
-                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
+                      {/* Chunks Select - Hidden in CHAT mode */}
+                      {selectedProfile !== "chat" && (
+                        <div className="relative flex items-center gap-1">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                            <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                            <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                            <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                          </svg>
+                          <select
+                            value={chunkCount}
+                            onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                            className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          >
+                            {CHUNK_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                          >
+                            <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      )}
 
                       <div className="flex-1" />
 
@@ -356,6 +402,7 @@ export function ChatInterface() {
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
                           <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
+                          <option value="chat">💬 CHAT</option>
                           {profiles.map((profile) => (
                             <option key={profile.id_profile} value={profile.id_profile}>
                               {profile.name}
@@ -375,34 +422,36 @@ export function ChatInterface() {
 
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
-                      {/* Chunks Select */}
-                      <div className="relative flex items-center gap-1">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
-                          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
-                          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
-                          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
-                        </svg>
-                        <select
-                          value={chunkCount}
-                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
-                          className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
-                        >
-                          {CHUNK_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <svg
-                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
-                          width="10"
-                          height="10"
-                          viewBox="0 0 10 10"
-                          fill="none"
-                        >
-                          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
+                      {/* Chunks Select - Hidden in CHAT mode */}
+                      {selectedProfile !== "chat" && (
+                        <div className="relative flex items-center gap-1">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8e8ea9]">
+                            <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                            <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                            <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                          </svg>
+                          <select
+                            value={chunkCount}
+                            onChange={(e: ChangeEvent<HTMLSelectElement>) => setChunkCount(Number(e.target.value))}
+                            className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none"
+                          >
+                            {CHUNK_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                          >
+                            <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      )}
 
                       <div className="flex-1" />
 
