@@ -48,7 +48,6 @@ function getRequiredSequentialEnvGroup(baseName: string): string[] {
 export const config = {
   geminiApiKeys: getRequiredSequentialEnvGroup("GEMINI_API_KEY"),
   groqApiKeys: getSequentialEnvGroup("GROQ_API_KEY"),
-  aiStudioApiKey: getEnv("AI_STUDIO_API_KEY"),
   supabaseUrl: getRequiredEnv("SUPABASE_URL"),
   supabaseServiceRoleKey: getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
   documentsTable: process.env.SUPABASE_DOCUMENTS_TABLE || "documents",

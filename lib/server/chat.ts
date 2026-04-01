@@ -4,11 +4,12 @@ import { config } from "./config"
 const GEMMA_MODEL = "gemma-3-24b-it"
 
 export async function generateChatResponse(message: string): Promise<string> {
-  if (!config.aiStudioApiKey) {
-    throw new Error("AI_STUDIO_API_KEY no configurada")
+  const apiKey = config.geminiApiKeys[0]
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY no configurada")
   }
 
-  const client = new GoogleGenAI({ apiKey: config.aiStudioApiKey })
+  const client = new GoogleGenAI({ apiKey })
 
   try {
     const response = await client.models.generateContent({
