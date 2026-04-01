@@ -43,10 +43,12 @@ export async function POST(request: Request) {
       question?: unknown
       chunkCount?: unknown
       profileId?: unknown
+      context?: Array<{ role: "user" | "assistant"; content: string }>
     }
     const question = String(body.question || "").trim()
     const chunkCount = resolveChunkCount(body.chunkCount)
     const profileId = Number(body.profileId)
+    const context = body.context || []
 
     if (!question) {
       return NextResponse.json(
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
       return `[Fragmento ${index + 1}${similarity}]\n${match.content}`
     })
 
-    const answer = await generateAnswer({ question, contexts, chunkCount })
+    const answer = await generateAnswer({ question, contexts, chunkCount, context })
 
     return NextResponse.json({
       success: true,

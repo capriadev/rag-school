@@ -12,7 +12,19 @@ function resolveModelRotation(chunkCount: number): string[] {
   return MODEL_ROTATION_BY_CHUNKS[closest] ?? MODEL_ROTATION_BY_CHUNKS[DEFAULT_CHUNK_COUNT]
 }
 
-function buildPrompt({ question, contexts }: { question: string; contexts: string[] }): string {
+function buildPrompt({
+  question,
+  contexts,
+  context,
+}: {
+  question: string
+  contexts: string[]
+  context?: Array<{ role: "user" | "assistant"; content: string }>
+}): string {
+  const conversationHistory = context && context.length > 0
+    ? context.map(m => `${m.role === "user" ? "Usuario" : "Asistente"}: ${m.content}`).join("\n\n")
+    : ""
+
   return [
     "Sos un asistente RAG de alta precision.",
     "Responde unicamente con informacion presente en el contexto recuperado.",
@@ -20,6 +32,7 @@ function buildPrompt({ question, contexts }: { question: string; contexts: strin
     "Si el contexto no alcanza para responder, responde exactamente: No se encontro informacion relevante en las fuentes.",
     "Si la pregunta pide pasos, listas o comparaciones, responde con formato Markdown claro.",
     "Responde en espanol, de forma directa, precisa y util.",
+    conversationHistory ? `\nHistorial de conversacion:\n${conversationHistory}\n` : "",
     "",
     "Contexto:",
     contexts.length ? contexts.join("\n\n---\n\n") : "Sin contexto disponible.",
@@ -32,10 +45,12 @@ export async function generateAnswer({
   question,
   contexts,
   chunkCount,
+  context,
 }: {
   question: string
   contexts: string[]
   chunkCount?: number
+  context?: Array<{ role: "user" | "assistant"; content: string }>
 }): Promise<string> {
   if (!groqClients.length) {
     throw new Error("No hay proveedor de respuesta disponible. Configura GROQ_API_KEY.")
@@ -53,7 +68,7 @@ export async function generateAnswer({
           messages: [
             {
               role: "user",
-              content: buildPrompt({ question, contexts }),
+              content: buildPrompt({ question, contexts, context }),
             },
           ],
         })

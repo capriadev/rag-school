@@ -16,7 +16,10 @@ CONTEXTO DEL PROYECTO:
 - Tú eres el modo "Chat": un asistente de conversación general SIN acceso a documentos ni bases de conocimiento (RAG).
 - Si el usuario pregunta por documentos, datos específicos o información almacenada, indícale que debe usar el modo RAG seleccionando un perfil en el dropdown.`
 
-export async function generateChatResponse(message: string): Promise<string> {
+export async function generateChatResponse(
+  message: string,
+  context?: Array<{ role: "user" | "assistant"; content: string }>,
+): Promise<string> {
   const apiKey = config.geminiApiKeys[0]
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY no configurada")
@@ -24,23 +27,38 @@ export async function generateChatResponse(message: string): Promise<string> {
 
   const client = new GoogleGenAI({ apiKey })
 
+  // Build contents array with system prompt + context + current message
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
+    {
+      role: "user",
+      parts: [{ text: SYSTEM_PROMPT }],
+    },
+    {
+      role: "model",
+      parts: [{ text: "Entendido. Seré breve, directo y honesto sobre lo que sé y no sé." }],
+    },
+  ]
+
+  // Add conversation context if provided
+  if (context && context.length > 0) {
+    for (const msg of context) {
+      contents.push({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
+      })
+    }
+  }
+
+  // Add current message
+  contents.push({
+    role: "user",
+    parts: [{ text: message }],
+  })
+
   try {
     const response = await client.models.generateContent({
       model: GEMMA_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Entendido. Seré breve, directo y honesto sobre lo que sé y no sé." }],
-        },
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ],
+      contents,
     })
 
     return response.text || "No se pudo generar una respuesta."
@@ -50,7 +68,10 @@ export async function generateChatResponse(message: string): Promise<string> {
   }
 }
 
-export async function* generateChatResponseStream(message: string): AsyncGenerator<string, void, unknown> {
+export async function* generateChatResponseStream(
+  message: string,
+  context?: Array<{ role: "user" | "assistant"; content: string }>,
+): AsyncGenerator<string, void, unknown> {
   const apiKey = config.geminiApiKeys[0]
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY no configurada")
@@ -58,23 +79,38 @@ export async function* generateChatResponseStream(message: string): AsyncGenerat
 
   const client = new GoogleGenAI({ apiKey })
 
+  // Build contents array with system prompt + context + current message
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
+    {
+      role: "user",
+      parts: [{ text: SYSTEM_PROMPT }],
+    },
+    {
+      role: "model",
+      parts: [{ text: "Entendido. Seré breve, directo y honesto sobre lo que sé y no sé." }],
+    },
+  ]
+
+  // Add conversation context if provided
+  if (context && context.length > 0) {
+    for (const msg of context) {
+      contents.push({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
+      })
+    }
+  }
+
+  // Add current message
+  contents.push({
+    role: "user",
+    parts: [{ text: message }],
+  })
+
   try {
     const response = await client.models.generateContentStream({
       model: GEMMA_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Entendido. Seré breve, directo y honesto sobre lo que sé y no sé." }],
-        },
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ],
+      contents,
     })
 
     for await (const chunk of response) {

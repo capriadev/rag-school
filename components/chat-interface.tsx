@@ -82,10 +82,13 @@ export function ChatInterface() {
         // Add empty assistant message for streaming
         setMessages((prev) => [...prev, { role: "assistant", content: "" }])
 
+        // Get conversation context (all messages except the empty assistant one we just added)
+        const context = messages.filter(m => m.content.trim() !== "")
+
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: question, stream: true }),
+          body: JSON.stringify({ message: question, stream: true, context }),
         })
 
         if (!response.body) {
@@ -145,6 +148,9 @@ export function ChatInterface() {
     // RAG mode - use query API with profile and chunks
     if (selectedProfile) {
       try {
+        // Get conversation context
+        const context = messages.filter(m => m.content.trim() !== "")
+
         const response = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,6 +158,7 @@ export function ChatInterface() {
             question,
             chunkCount,
             profileId: Number(selectedProfile),
+            context,
           }),
         })
         const data = await response.json()
@@ -280,6 +287,16 @@ export function ChatInterface() {
                       placeholder={placeholder}
                       className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+                          e.preventDefault()
+                          if (question.trim()) {
+                            const form = e.currentTarget.closest("form")
+                            form?.requestSubmit()
+                          }
+                        }
+                      }}
                       style={{
                         minHeight: "28px",
                         maxHeight: "120px",
@@ -443,6 +460,16 @@ export function ChatInterface() {
                       placeholder={placeholder}
                       className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
                       rows={1}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+                          e.preventDefault()
+                          if (question.trim()) {
+                            const form = e.currentTarget.closest("form")
+                            form?.requestSubmit()
+                          }
+                        }
+                      }}
                       style={{
                         minHeight: "28px",
                         maxHeight: "120px",
