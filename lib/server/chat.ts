@@ -49,3 +49,42 @@ export async function generateChatResponse(message: string): Promise<string> {
     throw new Error(`Gemma chat failed: ${errorMessage}`)
   }
 }
+
+export async function* generateChatResponseStream(message: string): AsyncGenerator<string, void, unknown> {
+  const apiKey = config.geminiApiKeys[0]
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY no configurada")
+  }
+
+  const client = new GoogleGenAI({ apiKey })
+
+  try {
+    const response = await client.models.generateContentStream({
+      model: GEMMA_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: SYSTEM_PROMPT }],
+        },
+        {
+          role: "model",
+          parts: [{ text: "Entendido. Seré breve, directo y honesto sobre lo que sé y no sé." }],
+        },
+        {
+          role: "user",
+          parts: [{ text: message }],
+        },
+      ],
+    })
+
+    for await (const chunk of response) {
+      const text = chunk.text
+      if (text) {
+        yield text
+      }
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Error desconocido"
+    throw new Error(`Gemma chat stream failed: ${errorMessage}`)
+  }
+}

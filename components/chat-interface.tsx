@@ -1,7 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import type { ChangeEvent, FormEvent } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
 
 const CHUNK_OPTIONS = [
   { value: 3, label: "Preciso" },
@@ -72,19 +76,65 @@ export function ChatInterface() {
       textarea.style.height = "28px"
     })
 
-    // CHAT mode - use AI Studio Gemma
+    // CHAT mode - use AI Studio Gemma with streaming
     if (selectedProfile === "chat") {
       try {
+        // Add empty assistant message for streaming
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }])
+
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: question }),
+          body: JSON.stringify({ message: question, stream: true }),
         })
-        const data = await response.json()
-        if (data.success) {
-          setMessages((prev) => [...prev, { role: "assistant", content: data.response }])
-        } else {
-          setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${data.error}` }])
+
+        if (!response.body) {
+          throw new Error("No response body")
+        }
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let accumulatedResponse = ""
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split("\n\n")
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6)
+              if (data === "[DONE]") continue
+
+              try {
+                const parsed = JSON.parse(data)
+                if (parsed.chunk) {
+                  accumulatedResponse += parsed.chunk
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    newMessages[newMessages.length - 1] = {
+                      role: "assistant",
+                      content: accumulatedResponse,
+                    }
+                    return newMessages
+                  })
+                } else if (parsed.error) {
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    newMessages[newMessages.length - 1] = {
+                      role: "assistant",
+                      content: `Error: ${parsed.error}`,
+                    }
+                    return newMessages
+                  })
+                }
+              } catch {
+                // Ignore parse errors
+              }
+            }
+          }
         }
       } catch (error) {
         setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión con el servidor." }])
@@ -353,7 +403,32 @@ export function ChatInterface() {
                       <div className={`text-sm ${msg.role === "user" ? "font-semibold text-[#ececf7]" : "text-[#b4b4c6]"}`}>
                         {msg.role === "user" ? "Tú" : "RAG Custom"}
                       </div>
-                      <div className="mt-1 text-[15px] leading-7">{msg.content}</div>
+                      <div className="prose prose-invert prose-sm mt-1 max-w-none text-[15px] leading-7">
+                        {msg.role === "user" ? (
+                          <div className="text-[15px] leading-7">{msg.content}</div>
+                        ) : (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
+                              ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
+                              li: ({ children }) => <li className="mb-1">{children}</li>,
+                              code: ({ children, className }) => (
+                                <code className={`${className} rounded bg-[#2a2a3a] px-1.5 py-0.5 text-sm`}>
+                                  {children}
+                                </code>
+                              ),
+                              pre: ({ children }) => (
+                                <pre className="mb-2 overflow-x-auto rounded-lg bg-[#1f1f23] p-3">{children}</pre>
+                              ),
+                            }}
+                          >
+                            {msg.content || "▌"}
+                          </ReactMarkdown>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
