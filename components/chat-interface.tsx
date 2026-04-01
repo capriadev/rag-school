@@ -404,30 +404,26 @@ export function ChatInterface() {
                         {msg.role === "user" ? "Tú" : "RAG Custom"}
                       </div>
                       <div className="prose prose-invert prose-sm mt-1 max-w-none text-[15px] leading-7">
-                        {msg.role === "user" ? (
-                          <div className="text-[15px] leading-7">{msg.content}</div>
-                        ) : (
-                          <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                            components={{
-                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                              ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
-                              ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
-                              li: ({ children }) => <li className="mb-1">{children}</li>,
-                              code: ({ children, className }) => (
-                                <code className={`${className} rounded bg-[#2a2a3a] px-1.5 py-0.5 text-sm`}>
-                                  {children}
-                                </code>
-                              ),
-                              pre: ({ children }) => (
-                                <pre className="mb-2 overflow-x-auto rounded-lg bg-[#1f1f23] p-3">{children}</pre>
-                              ),
-                            }}
-                          >
-                            {msg.content || "▌"}
-                          </ReactMarkdown>
-                        )}
+                        <ReactMarkdown
+                          remarkPlugins={[remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
+                            ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1">{children}</li>,
+                            code: ({ children, className }) => (
+                              <code className={`${className} rounded bg-[#2a2a3a] px-1.5 py-0.5 text-sm`}>
+                                {children}
+                              </code>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="mb-2 overflow-x-auto rounded-lg bg-[#1f1f23] p-3">{children}</pre>
+                            ),
+                          }}
+                        >
+                          {msg.content || (msg.role === "assistant" ? "▌" : "")}
+                        </ReactMarkdown>
                       </div>
                     </div>
                   </div>
