@@ -37,7 +37,6 @@ export function ChatInterface() {
   const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
   const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
-  const [showPreview, setShowPreview] = useState(false)
 
   // Load profiles from API on mount
   useEffect(() => {
@@ -282,66 +281,35 @@ export function ChatInterface() {
                 <div className="relative">
                   <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-2 transition focus-within:border-[#5b4cff]">
                     {/* Textarea - Always first on mobile and desktop */}
-                    {showPreview ? (
-                      <div className="min-h-[28px] max-h-[120px] overflow-auto py-1 text-sm leading-relaxed">
-                        {question.trim() ? (
-                          <div className="prose prose-invert prose-sm max-w-none">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              components={{
-                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
-                                li: ({ children }) => <li className="mb-1">{children}</li>,
-                                code: ({ children, className }) => (
-                                  <code className={`${className} rounded bg-[#2a2a3a] px-1.5 py-0.5 text-sm`}>
-                                    {children}
-                                  </code>
-                                ),
-                                pre: ({ children }) => (
-                                  <pre className="mb-2 overflow-x-auto rounded-lg bg-[#1f1f23] p-3">{children}</pre>
-                                ),
-                              }}
-                            >
-                              {question}
-                            </ReactMarkdown>
-                          </div>
-                        ) : (
-                          <span className="text-[#55556f]">Vista previa...</span>
-                        )}
-                      </div>
-                    ) : (
-                      <textarea
-                        value={question}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
-                        placeholder={placeholder}
-                        className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
-                        rows={1}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
-                            e.preventDefault()
-                            if (question.trim()) {
-                              const form = e.currentTarget.closest("form")
-                              form?.requestSubmit()
-                            }
+                    <textarea
+                      value={question}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
+                      placeholder={placeholder}
+                      className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
+                      rows={1}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+                          e.preventDefault()
+                          if (question.trim()) {
+                            const form = e.currentTarget.closest("form")
+                            form?.requestSubmit()
                           }
-                        }}
-                        style={{
-                          minHeight: "28px",
-                          maxHeight: "120px",
-                          overflow: "auto",
-                          scrollbarWidth: "thin",
-                          scrollbarColor: "#2a2a3a transparent",
-                        }}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement
-                          target.style.height = "28px"
-                          target.style.height = `${Math.min(target.scrollHeight, 120)}px`
-                        }}
-                      />
-                    )}
+                        }
+                      }}
+                      style={{
+                        minHeight: "28px",
+                        maxHeight: "120px",
+                        overflow: "auto",
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "#2a2a3a transparent",
+                      }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement
+                        target.style.height = "28px"
+                        target.style.height = `${Math.min(target.scrollHeight, 120)}px`
+                      }}
+                    />
 
                     {/* Selects and button row */}
                     <div className="flex items-center gap-2">
@@ -376,18 +344,6 @@ export function ChatInterface() {
                           <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
-
-                      <div className="h-4 w-px bg-[#2a2a3a]" />
-
-                      {/* Preview Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => setShowPreview(!showPreview)}
-                        className={`text-xs transition ${showPreview ? "text-[#5b4cff]" : "text-[#8e8ea9] hover:text-[#ececf7]"}`}
-                        title={showPreview ? "Editar" : "Vista previa"}
-                      >
-                        {showPreview ? "Editar" : "Preview"}
-                      </button>
 
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
@@ -498,66 +454,35 @@ export function ChatInterface() {
                 <div className="relative">
                   <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-2 transition focus-within:border-[#5b4cff]">
                     {/* Textarea - Always first */}
-                    {showPreview ? (
-                      <div className="min-h-[28px] max-h-[120px] overflow-auto py-1 text-sm leading-relaxed">
-                        {question.trim() ? (
-                          <div className="prose prose-invert prose-sm max-w-none">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              components={{
-                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
-                                li: ({ children }) => <li className="mb-1">{children}</li>,
-                                code: ({ children, className }) => (
-                                  <code className={`${className} rounded bg-[#2a2a3a] px-1.5 py-0.5 text-sm`}>
-                                    {children}
-                                  </code>
-                                ),
-                                pre: ({ children }) => (
-                                  <pre className="mb-2 overflow-x-auto rounded-lg bg-[#1f1f23] p-3">{children}</pre>
-                                ),
-                              }}
-                            >
-                              {question}
-                            </ReactMarkdown>
-                          </div>
-                        ) : (
-                          <span className="text-[#55556f]">Vista previa...</span>
-                        )}
-                      </div>
-                    ) : (
-                      <textarea
-                        value={question}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
-                        placeholder={placeholder}
-                        className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
-                        rows={1}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
-                            e.preventDefault()
-                            if (question.trim()) {
-                              const form = e.currentTarget.closest("form")
-                              form?.requestSubmit()
-                            }
+                    <textarea
+                      value={question}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)}
+                      placeholder={placeholder}
+                      className="w-full resize-none bg-transparent py-1 text-sm leading-relaxed focus:outline-none"
+                      rows={1}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) {
+                          e.preventDefault()
+                          if (question.trim()) {
+                            const form = e.currentTarget.closest("form")
+                            form?.requestSubmit()
                           }
-                        }}
-                        style={{
-                          minHeight: "28px",
-                          maxHeight: "120px",
-                          overflow: "auto",
-                          scrollbarWidth: "thin",
-                          scrollbarColor: "#2a2a3a transparent",
-                        }}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement
-                          target.style.height = "28px"
-                          target.style.height = `${Math.min(target.scrollHeight, 120)}px`
-                        }}
-                      />
-                    )}
+                        }
+                      }}
+                      style={{
+                        minHeight: "28px",
+                        maxHeight: "120px",
+                        overflow: "auto",
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "#2a2a3a transparent",
+                      }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement
+                        target.style.height = "28px"
+                        target.style.height = `${Math.min(target.scrollHeight, 120)}px`
+                      }}
+                    />
 
                     {/* Selects and button row */}
                     <div className="flex items-center gap-2">
@@ -592,18 +517,6 @@ export function ChatInterface() {
                           <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
-
-                      <div className="h-4 w-px bg-[#2a2a3a]" />
-
-                      {/* Preview Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => setShowPreview(!showPreview)}
-                        className={`text-xs transition ${showPreview ? "text-[#5b4cff]" : "text-[#8e8ea9] hover:text-[#ececf7]"}`}
-                        title={showPreview ? "Editar" : "Vista previa"}
-                      >
-                        {showPreview ? "Editar" : "Preview"}
-                      </button>
 
                       <div className="h-4 w-px bg-[#2a2a3a]" />
 
