@@ -38,6 +38,10 @@ export function ChatInterface() {
   const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
 
+  // Token tracking - 8000 max context for Gemma model
+  const MAX_CONTEXT_TOKENS = 8000
+  const [usedTokens, setUsedTokens] = useState(0)
+
   // Load profiles from API on mount
   useEffect(() => {
     async function loadProfiles() {
@@ -61,6 +65,13 @@ export function ChatInterface() {
     const randomIndex = Math.floor(Math.random() * PLACEHOLDERS.length)
     setPlaceholder(PLACEHOLDERS[randomIndex])
   }, [])
+
+  // Calculate token usage based on messages
+  useEffect(() => {
+    const estimateTokens = (text: string) => Math.ceil(text.length / 4)
+    const total = messages.reduce((acc, msg) => acc + estimateTokens(msg.content), 0)
+    setUsedTokens(total)
+  }, [messages])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -380,6 +391,30 @@ export function ChatInterface() {
 
                       <div className="flex-1" />
 
+                      {/* Token Usage Progress Bar */}
+                      <div className="group relative flex items-center">
+                        <div className="relative h-7 w-24 overflow-hidden rounded-md border border-[#2a2a3a] bg-[#0a0a0f]">
+                          {/* Progress fill - border style from left to right */}
+                          <div
+                            className="absolute inset-y-0 left-0 bg-[#5b4cff]/20 transition-all duration-300"
+                            style={{ width: `${Math.min((usedTokens / MAX_CONTEXT_TOKENS) * 100, 100)}%` }}
+                          />
+                          {/* Border progress indicator */}
+                          <div
+                            className="absolute bottom-0 left-0 h-[2px] bg-[#5b4cff] transition-all duration-300"
+                            style={{ width: `${Math.min((usedTokens / MAX_CONTEXT_TOKENS) * 100, 100)}%` }}
+                          />
+                          {/* Percentage text */}
+                          <div className="relative flex h-full items-center justify-center text-[10px] font-medium text-[#8e8ea9]">
+                            {Math.min(Math.round((usedTokens / MAX_CONTEXT_TOKENS) * 100), 100)}%
+                          </div>
+                        </div>
+                        {/* Tooltip on hover */}
+                        <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-max rounded-md border border-[#2a2a3a] bg-[#111118] px-2 py-1 text-xs text-[#ececf7] opacity-0 transition-opacity group-hover:opacity-100">
+                          {usedTokens.toLocaleString()} / {MAX_CONTEXT_TOKENS.toLocaleString()} Tokens context
+                        </div>
+                      </div>
+
                       {/* Send Button */}
                       <button
                         type="submit"
@@ -552,6 +587,30 @@ export function ChatInterface() {
                       )}
 
                       <div className="flex-1" />
+
+                      {/* Token Usage Progress Bar */}
+                      <div className="group relative flex items-center">
+                        <div className="relative h-7 w-24 overflow-hidden rounded-md border border-[#2a2a3a] bg-[#0a0a0f]">
+                          {/* Progress fill - border style from left to right */}
+                          <div
+                            className="absolute inset-y-0 left-0 bg-[#5b4cff]/20 transition-all duration-300"
+                            style={{ width: `${Math.min((usedTokens / MAX_CONTEXT_TOKENS) * 100, 100)}%` }}
+                          />
+                          {/* Border progress indicator */}
+                          <div
+                            className="absolute bottom-0 left-0 h-[2px] bg-[#5b4cff] transition-all duration-300"
+                            style={{ width: `${Math.min((usedTokens / MAX_CONTEXT_TOKENS) * 100, 100)}%` }}
+                          />
+                          {/* Percentage text */}
+                          <div className="relative flex h-full items-center justify-center text-[10px] font-medium text-[#8e8ea9]">
+                            {Math.min(Math.round((usedTokens / MAX_CONTEXT_TOKENS) * 100), 100)}%
+                          </div>
+                        </div>
+                        {/* Tooltip on hover */}
+                        <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-max rounded-md border border-[#2a2a3a] bg-[#111118] px-2 py-1 text-xs text-[#ececf7] opacity-0 transition-opacity group-hover:opacity-100">
+                          {usedTokens.toLocaleString()} / {MAX_CONTEXT_TOKENS.toLocaleString()} Tokens context
+                        </div>
+                      </div>
 
                       {/* Send Button */}
                       <button
