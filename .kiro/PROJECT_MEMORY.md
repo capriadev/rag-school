@@ -31,6 +31,7 @@
 - **Chat Storage**: Firebase Realtime Database (planned)
 - **Embeddings**: Google Gemini (user-provided API keys)
 - **LLM**: Groq (user-provided API keys)
+- **Chat Mode**: Google AI Studio (Gemma 3 27b)
 - **Training**: n8n (local workflow automation)
 - **Deployment**: Vercel (query only), Local (training)
 
@@ -58,6 +59,8 @@
 - `feat: create new minimal chat interface UI`
 - `style: add textarea scroll and custom select arrows`
 - `fix: reset textarea height after sending message`
+- `feat(context): implement token estimation, prompt classifier, EMA ratio calculator`
+- `feat(context): integrate ContextManager into chat.ts for Gemma 3 27b with auto-compaction`
 
 ### Development Flow
 1. User describes what they want
@@ -73,24 +76,52 @@
 ## What We Accomplished Today
 
 ### Session Summary
-Transformed RAG School into RAG Customs with a modern, minimal UI inspired by Claude/ChatGPT.
+Implemented an advanced context management system with auto-compaction for both CHAT mode (Gemma 3 27b) and future RAG mode support.
 
 ### Major Changes
 
-#### 1. UI Complete Redesign
-**Commits**: 
-- `feat: create new minimal chat interface UI`
-- `refactor: redesign UI with minimal Claude-style interface`
-- `fix: correct UI styling, add auth modal, move chunk selector`
+#### 1. Context Manager System (NEW)
+**Commits**:
+- `feat(context): implement token estimation, prompt classifier, EMA ratio calculator`
+- `feat(context): integrate ContextManager into chat.ts for Gemma 3 27b with auto-compaction`
 
 **What we did**:
-- Deleted old `rag-shell.tsx` component
-- Created new `chat-interface.tsx` with minimal design
-- Centered initial view with large "RAG Custom" title
-- Chat-style interface with messages
-- Compact sidebar with expand/collapse
+- Created `lib/server/context-manager.ts` with full context management system
+- Token estimation based on character count (~4 chars = 1 token)
+- Prompt classifier (short/medium/long) with keyword detection
+- EMA ratio calculator with clamping and feedback loop
+- Overflow prediction engine with dynamic margins
+- Context compaction service using LLM self-summarization
+- ContextManager class with configurable options per model
+- Model-specific configurations for Gemma, Llama 3.1 8B/70B, Mixtral
 
-#### 2. PDF Processing Fix
+**Key Features**:
+- **Context Limit**: 64k tokens for Gemma (from 128k max)
+- **Compaction Trigger**: 55k tokens (50-60k range)
+- **EMA Alpha**: 0.25 for ratio tracking
+- **Ratio Clamp**: [0.05, 0.5] to prevent explosions
+- **Dynamic Margins**: Based on expected output + safety buffer
+- **Prompt Classification**: Keywords boost expected output prediction
+- **Feedback Loop**: Corrects ratio based on actual vs expected output
+
+#### 2. CHAT Mode Improvements
+**Commits**:
+- `feat: add streaming responses and markdown/LaTeX support`
+- `feat: add conversation context/memory to chat`
+- `feat: add live markdown/LaTeX preview to chat input`
+- `refactor: remove preview/edit toggle, keep simple textarea`
+- `feat: add context token usage progress bar with hover tooltip`
+
+**What we did**:
+- Streaming responses via Server-Sent Events (SSE)
+- Markdown + LaTeX rendering with ReactMarkdown, remark-math, rehype-katex
+- Conversation context maintained across messages
+- Token usage progress bar (shows % of 8k context used)
+- Hover tooltip shows "X / 8,000 Tokens context"
+- System prompt informs model about Markdown/LaTeX capabilities
+- **Enter**: Sends message, **Shift/Ctrl+Enter**: New line
+
+#### 3. PDF Processing Fix
 **Commits**:
 - `fix: disable PDF processing in Next.js, add n8n workflow button`
 
@@ -100,7 +131,7 @@ Transformed RAG School into RAG Customs with a modern, minimal UI inspired by Cl
 - Added "Workflow n8n" button for PDF training
 - PDFs now processed via local n8n workflow at `http://localhost:5678/webhook/entrenar`
 
-#### 3. Input Design Iterations
+#### 4. Input Design Iterations
 **Commits**:
 - `style: add textarea scroll and custom select arrows`
 - `style: add custom arrows to selects and improve textarea scroll`
@@ -187,31 +218,38 @@ rag-school/
 │   └── PROJECT_MEMORY.md (this file)
 ├── app/
 │   ├── api/
+│   │   ├── chat/
+│   │   │   └── route.ts          # Chat API with streaming
 │   │   ├── health/
 │   │   ├── keepalive/
+│   │   ├── profiles/
+│   │   │   └── route.ts          # Profile listing API
 │   │   ├── query/
+│   │   │   └── route.ts          # RAG query API
 │   │   └── train/
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/
-│   └── chat-interface.tsx (NEW - main UI component)
+│   └── chat-interface.tsx        # Main UI component (chat + RAG)
 ├── lib/
 │   ├── server/
+│   │   ├── chat.ts               # Gemma chat with context manager
 │   │   ├── chunking.ts
-│   │   ├── config.ts
+│   │   ├── config.ts             # Environment variables
+│   │   ├── context-manager.ts    # NEW: Context management system
 │   │   ├── embeddings.ts
-│   │   ├── ingestion.ts (PDF disabled)
-│   │   ├── llm.ts
+│   │   ├── ingestion.ts          # PDF disabled
+│   │   ├── llm.ts                # RAG LLM (Groq)
 │   │   ├── multimodal.ts
 │   │   ├── office.ts
-│   │   ├── pdf.ts (not used in production)
+│   │   ├── pdf.ts                # Not used in production
 │   │   └── supabase.ts
 │   └── shared/
 │       ├── llm.ts
 │       └── types.ts
 ├── supabase/
-│   └── schema.sql
+│   └── schema.sql                # Multi-profile schema
 ├── package.json
 └── next.config.mjs
 ```
@@ -230,7 +268,33 @@ rag-school/
 - Full control over knowledge bases
 - Run with: `npm run train` (to be implemented)
 
-### 2. n8n for PDF Processing
+### 2. Context Management System
+**Architecture**:
+- **Token Estimation**: Character-based (~4 chars/token)
+- **Prompt Classifier**: short/medium/long with keyword boost
+- **EMA Ratio**: Adaptive output/input ratio tracking
+- **Overflow Prediction**: Dynamic margin calculation
+- **Auto-Compaction**: LLM-based context summarization
+
+**Flow**:
+```
+User Input → Classify Prompt → Predict Overflow → [Compact if needed] → Execute
+                                              ↓
+                                    Record Interaction → Update EMA Ratio
+```
+
+**Configuration per Model**:
+- **Gemma 3 27b**: 64k limit, 55k trigger, 8k min after compaction
+- **Llama 3.1 8b**: 32k limit, 28k trigger, 4k min after compaction
+- **Llama 3.1 70b**: 64k limit, 55k trigger, 8k min after compaction
+- **Mixtral 8x7b**: 16k limit, 14k trigger, 3k min after compaction
+
+**Compaction System Prompt**:
+- Maintains: objectives, technical data, decisions, important context, pending tasks
+- Eliminates: repetitions, irrelevant info, temporal details, courtesy phrases
+- Output: Structured bullet points, max 8k tokens
+
+### 3. n8n for PDF Processing
 - Next.js can't handle `pdf-parse` in production
 - n8n runs locally in Docker
 - Webhook endpoint: `http://localhost:5678/webhook/entrenar`
