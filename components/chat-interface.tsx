@@ -287,7 +287,7 @@ export function ChatInterface() {
             </div>
 
             {/* Input area - Centered */}
-            <div className="w-full max-w-3xl">
+            <div className="w-full px-4 md:max-w-3xl md:px-0">
               <form onSubmit={handleSubmit}>
                 <div className="relative">
                   <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-2 transition focus-within:border-[#5b4cff]">
@@ -485,7 +485,7 @@ export function ChatInterface() {
 
             {/* Input area - Bottom */}
             <div className="relative px-6 py-2">
-              <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+              <form onSubmit={handleSubmit} className="mx-auto w-full md:max-w-3xl">
                 <div className="relative">
                   <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-2 transition focus-within:border-[#5b4cff]">
                     {/* Textarea - Always first */}
