@@ -38,8 +38,8 @@ export function ChatInterface() {
   const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
 
-  // Token tracking - 8000 max context for Gemma model
-  const MAX_CONTEXT_TOKENS = 8000
+  // Token tracking - dynamic based on mode (CHAT uses 64k for Gemma, RAG varies)
+  const MAX_CONTEXT_TOKENS = selectedProfile === "chat" ? 64000 : 32000
   const [usedTokens, setUsedTokens] = useState(0)
 
   // Load profiles from API on mount
