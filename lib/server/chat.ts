@@ -1,7 +1,22 @@
 import { GoogleGenAI } from "@google/genai"
 import { config } from "./config"
+import { ContextManager, DEFAULT_GEMMA_CONFIG } from "./context-manager"
 
 const GEMMA_MODEL = "models/gemma-3-27b-it"
+
+// Global context manager for chat mode (Gemma 3 27b)
+const chatContextManager = new ContextManager({
+  modelConfig: DEFAULT_GEMMA_CONFIG,
+})
+
+// Export for monitoring/debugging
+export function getChatContextStats() {
+  return chatContextManager.getStats()
+}
+
+export function getChatContextTokens() {
+  return chatContextManager.getContextTokens()
+}
 
 const SYSTEM_PROMPT = `Eres un asistente de chat conciso y directo.
 
@@ -30,9 +45,18 @@ export async function generateChatResponse(
     throw new Error("GEMINI_API_KEY no configurada")
   }
 
+  // Check and compact context if needed
+  const wasCompacted = await chatContextManager.checkAndCompact(message)
+  if (wasCompacted) {
+    console.log("[Chat] Context compacted before request")
+  }
+
   const client = new GoogleGenAI({ apiKey })
 
-  // Build contents array with system prompt + context + current message
+  // Get compacted messages from context manager
+  const managedMessages = chatContextManager.getMessages()
+
+  // Build contents array with system prompt + managed context + current message
   const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
     {
       role: "user",
@@ -44,14 +68,12 @@ export async function generateChatResponse(
     },
   ]
 
-  // Add conversation context if provided
-  if (context && context.length > 0) {
-    for (const msg of context) {
-      contents.push({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      })
-    }
+  // Add managed context (already compacted if needed)
+  for (const msg of managedMessages) {
+    contents.push({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.content }],
+    })
   }
 
   // Add current message
@@ -66,7 +88,16 @@ export async function generateChatResponse(
       contents,
     })
 
-    return response.text || "No se pudo generar una respuesta."
+    const responseText = response.text || "No se pudo generar una respuesta."
+
+    // Record interaction for EMA tracking
+    chatContextManager.recordInteraction(message, responseText)
+
+    // Add messages to context manager
+    chatContextManager.addMessage("user", message)
+    chatContextManager.addMessage("assistant", responseText)
+
+    return responseText
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Error desconocido"
     throw new Error(`Gemma chat failed: ${errorMessage}`)
@@ -82,9 +113,18 @@ export async function* generateChatResponseStream(
     throw new Error("GEMINI_API_KEY no configurada")
   }
 
+  // Check and compact context if needed
+  const wasCompacted = await chatContextManager.checkAndCompact(message)
+  if (wasCompacted) {
+    console.log("[Chat Stream] Context compacted before request")
+  }
+
   const client = new GoogleGenAI({ apiKey })
 
-  // Build contents array with system prompt + context + current message
+  // Get compacted messages from context manager
+  const managedMessages = chatContextManager.getMessages()
+
+  // Build contents array with system prompt + managed context + current message
   const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
     {
       role: "user",
@@ -96,14 +136,12 @@ export async function* generateChatResponseStream(
     },
   ]
 
-  // Add conversation context if provided
-  if (context && context.length > 0) {
-    for (const msg of context) {
-      contents.push({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      })
-    }
+  // Add managed context (already compacted if needed)
+  for (const msg of managedMessages) {
+    contents.push({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.content }],
+    })
   }
 
   // Add current message
@@ -111,6 +149,8 @@ export async function* generateChatResponseStream(
     role: "user",
     parts: [{ text: message }],
   })
+
+  let fullResponse = ""
 
   try {
     const response = await client.models.generateContentStream({
@@ -121,9 +161,17 @@ export async function* generateChatResponseStream(
     for await (const chunk of response) {
       const text = chunk.text
       if (text) {
+        fullResponse += text
         yield text
       }
     }
+
+    // Record interaction for EMA tracking after stream completes
+    chatContextManager.recordInteraction(message, fullResponse)
+
+    // Add messages to context manager
+    chatContextManager.addMessage("user", message)
+    chatContextManager.addMessage("assistant", fullResponse)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Error desconocido"
     throw new Error(`Gemma chat stream failed: ${errorMessage}`)
