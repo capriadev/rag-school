@@ -484,7 +484,7 @@ export function ChatInterface() {
             </div>
 
             {/* Input area - Bottom */}
-            <div className="relative border-t border-[#1f1f23] px-6 py-2">
+            <div className="relative px-6 py-2">
               <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
                 <div className="relative">
                   <div className="flex flex-col gap-2 rounded-2xl border border-[#2a2a3a] bg-[#111118] px-4 py-2 transition focus-within:border-[#5b4cff]">
