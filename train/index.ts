@@ -15,10 +15,16 @@ import { processRouter } from "./api/process.js"
 
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
+const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+// Serve admin UI
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"))
+})
 
 // Rutas API
 app.use("/api/upload", uploadRouter)

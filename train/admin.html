@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Custom - Training Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: #0a0a0f;
+      color: #ececf7;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h1 span { color: #5b4cff; }
+    .subtitle { color: #8e8ea9; margin-bottom: 2rem; }
+    
+    .card {
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.875rem; color: #8e8ea9; margin-bottom: 0.5rem; }
+    select, input[type="file"] {
+      width: 100%;
+      padding: 0.75rem;
+      background: #0a0a0f;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      color: #ececf7;
+      font-family: inherit;
+    }
+    
+    button {
+      background: #5b4cff;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover { background: #6c5cff; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .status { 
+      padding: 0.75rem; 
+      border-radius: 8px; 
+      margin-top: 1rem;
+      font-size: 0.875rem;
+    }
+    .status.success { background: rgba(0, 229, 176, 0.1); border: 1px solid #00e5b0; }
+    .status.error { background: rgba(255, 76, 107, 0.1); border: 1px solid #ff4c6b; }
+    .status.info { background: rgba(91, 76, 255, 0.1); border: 1px solid #5b4cff; }
+    
+    .jobs-list { margin-top: 1rem; }
+    .job-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: #0a0a0f;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .job-status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    .job-status.pending { background: #2a2a3a; color: #8e8ea9; }
+    .job-status.processing { background: #5b4cff; color: white; }
+    .job-status.completed { background: #00e5b0; color: #0a0a0f; }
+    .job-status.failed { background: #ff4c6b; color: white; }
+    
+    .upload-area {
+      border: 2px dashed #2a2a3a;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-area:hover { border-color: #5b4cff; }
+    .upload-area.dragover { border-color: #5b4cff; background: rgba(91, 76, 255, 0.05); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>RAG <span>Custom</span></h1>
+    <p class="subtitle">Panel de Administración - Entrenamiento Local</p>
+    
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Subir Documento</h3>
+      
+      <div class="form-group">
+        <label>Perfil RAG</label>
+        <select id="profileSelect">
+          <option value="">Cargando perfiles...</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Archivo (PDF, TXT, imágenes, etc.)</label>
+        <input type="file" id="fileInput" accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.mp3,.mp4,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+      </div>
+      
+      <button id="uploadBtn" onclick="uploadFile()">Subir y Procesar</button>
+      
+      <div id="status" class="status info" style="display: none;"></div>
+    </div>
+    
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Jobs de Entrenamiento</h3>
+      <button onclick="loadJobs()" style="margin-bottom: 1rem;">Actualizar</button>
+      <div id="jobsList" class="jobs-list">
+        <p style="color: #8e8ea9; text-align: center;">No hay jobs activos</p>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Estado del Sistema</h3>
+      <div id="systemStatus">Cargando...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3001';
+    
+    // Cargar perfiles al iniciar
+    async function loadProfiles() {
+      try {
+        // Usar la API de perfiles del frontend (puerto 3000)
+        const response = await fetch('/api/profiles');
+        const data = await response.json();
+        
+        const select = document.getElementById('profileSelect');
+        if (data.success && data.profiles) {
+          select.innerHTML = data.profiles.map(p => 
+            `<option value="${p.id_profile}">${p.name}</option>`
+          ).join('');
+        } else {
+          select.innerHTML = '<option value="">Error cargando perfiles</option>';
+        }
+      } catch (error) {
+        document.getElementById('profileSelect').innerHTML = 
+          '<option value="">Error: ¿Está corriendo el frontend? (npm run dev)</option>';
+      }
+    }
+    
+    // Subir archivo
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const profileSelect = document.getElementById('profileSelect');
+      const status = document.getElementById('status');
+      const btn = document.getElementById('uploadBtn');
+      
+      if (!fileInput.files[0]) {
+        showStatus('Selecciona un archivo', 'error');
+        return;
+      }
+      if (!profileSelect.value) {
+        showStatus('Selecciona un perfil', 'error');
+        return;
+      }
+      
+      btn.disabled = true;
+      showStatus('Subiendo archivo...', 'info');
+      
+      try {
+        // Paso 1: Subir archivo
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('profileId', profileSelect.value);
+        
+        const uploadRes = await fetch(`${API_URL}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.success) {
+          throw new Error(uploadData.error || 'Error al subir');
+        }
+        
+        showStatus('Archivo subido. Enviando a procesamiento...', 'info');
+        
+        // Paso 2: Procesar con n8n
+        const processRes = await fetch(`${API_URL}/api/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileId: uploadData.file.id,
+            profileId: profileSelect.value
+          })
+        });
+        
+        const processData = await processRes.json();
+        
+        if (processData.success) {
+          showStatus(`Job creado: ${processData.jobId}. El procesamiento es asíncrono.`, 'success');
+          loadJobs();
+        } else {
+          throw new Error(processData.error);
+        }
+        
+      } catch (error) {
+        showStatus('Error: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+    
+    // Mostrar estado
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+      status.style.display = 'block';
+    }
+    
+    // Cargar jobs
+    async function loadJobs() {
+      try {
+        const response = await fetch(`${API_URL}/api/process/jobs`);
+        const data = await response.json();
+        
+        const container = document.getElementById('jobsList');
+        if (data.jobs && data.jobs.length > 0) {
+          container.innerHTML = data.jobs.map(job => `
+            <div class="job-item">
+              <div>
+                <strong>${job.id.slice(0, 20)}...</strong>
+                <br><small style="color: #8e8ea9;">Perfil: ${job.profileId}</small>
+              </div>
+              <span class="job-status ${job.status}">${job.status}</span>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No hay jobs activos</p>';
+        }
+      } catch (error) {
+        document.getElementById('jobsList').innerHTML = 
+          '<p style="color: #ff4c6b; text-align: center;">Error cargando jobs</p>';
+      }
+    }
+    
+    // Cargar estado del sistema
+    async function loadSystemStatus() {
+      try {
+        const response = await fetch(`${API_URL}/api/status`);
+        const data = await response.json();
+        
+        document.getElementById('systemStatus').innerHTML = `
+          <p><strong>Estado:</strong> ${data.status}</p>
+          <p><strong>n8n Webhook:</strong> ${data.n8nWebhook}</p>
+          <p><strong>Upload Path:</strong> ${data.uploadPath}</p>
+        `;
+      } catch (error) {
+        document.getElementById('systemStatus').innerHTML = 
+          '<p style="color: #ff4c6b;">Error: ¿Está corriendo el training backend? (npm run train)</p>';
+      }
+    }
+    
+    // Inicializar
+    loadProfiles();
+    loadSystemStatus();
+    loadJobs();
+    setInterval(loadJobs, 5000); // Auto-refresh cada 5s
+  </script>
+</body>
+</html>
