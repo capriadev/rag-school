@@ -8,8 +8,10 @@
 
 import express from "express"
 import cors from "cors"
-import multer from "multer"
 import path from "path"
+
+import { uploadRouter } from "./api/upload.js"
+import { processRouter } from "./api/process.js"
 
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
@@ -18,11 +20,9 @@ const PORT = process.env.TRAIN_PORT || 3001
 app.use(cors())
 app.use(express.json())
 
-// Configuración de multer para subida de archivos
-const upload = multer({
-  dest: path.join(process.cwd(), "train", "uploads"),
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max
-})
+// Rutas API
+app.use("/api/upload", uploadRouter)
+app.use("/api/process", processRouter)
 
 // Health check
 app.get("/health", (req, res) => {
