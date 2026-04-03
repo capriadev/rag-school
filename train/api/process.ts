@@ -1,7 +1,7 @@
 import { Router } from "express"
 import path from "path"
-import { existsSync } from "fs"
 import fs from "fs/promises"
+import { insertDocuments } from "./db.js"
 
 const router = Router()
 
@@ -103,7 +103,7 @@ router.get("/jobs", (req, res) => {
   })
 })
 
-// Función para enviar a n8n webhook
+// Función para enviar a n8n webhook y guardar en DB
 async function sendToN8N(job: any, filename: string) {
   const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/entrenar"
   
@@ -134,17 +134,42 @@ async function sendToN8N(job: any, filename: string) {
 
     const result = await response.json()
     
-    job.status = "completed"
-    job.result = result
-    job.updatedAt = new Date().toISOString()
+    // n8n debe devolver: { chunks: [{ content, metadata, embedding }] }
+    if (result.chunks && Array.isArray(result.chunks) && result.chunks.length > 0) {
+      console.log(`[DB] Insertando ${result.chunks.length} chunks en Supabase...`)
+      
+      const documents = result.chunks.map((chunk: any) => ({
+        id_profile: parseInt(job.profileId),
+        content: chunk.content || chunk.text || "",
+        metadata: chunk.metadata || { source: filename },
+        embedding: chunk.embedding || [],
+      }))
 
-    console.log(`[N8N] Job ${job.id} completado:`, result)
+      const { inserted } = await insertDocuments(documents)
+      
+      job.status = "completed"
+      job.result = { 
+        ...result, 
+        inserted,
+        message: `${inserted} documentos insertados en el perfil ${job.profileId}`
+      }
+      job.updatedAt = new Date().toISOString()
+
+      console.log(`[DB] Job ${job.id} completado: ${inserted} documentos insertados`)
+    } else {
+      // n8n no devolvió chunks - solo marcamos como completado
+      job.status = "completed"
+      job.result = result
+      job.updatedAt = new Date().toISOString()
+      
+      console.log(`[N8N] Job ${job.id} completado (sin chunks para insertar):`, result)
+    }
 
     // Opcional: eliminar archivo después de procesar exitosamente
     // await fs.unlink(job.filePath)
 
   } catch (error: any) {
-    console.error(`[N8N ERROR] Job ${job.id}:`, error)
+    console.error(`[PROCESS ERROR] Job ${job.id}:`, error)
     job.status = "failed"
     job.error = error.message
     job.updatedAt = new Date().toISOString()
