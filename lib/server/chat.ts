@@ -2,8 +2,8 @@ import { GoogleGenAI } from "@google/genai"
 import { config } from "./config"
 import { ContextManager, DEFAULT_GEMMA_CONFIG } from "./context-manager"
 
-// const GEMMA_MODEL = "models/gemma-3-27b-it"
-const GEMMA_MODEL = "models/gemma-4-31b-it"
+const GEMMA_MODEL = "models/gemma-3-27b-it"
+// const GEMMA_MODEL = "models/gemma-4-31b-it"
 
 // Global context manager for chat mode (Gemma 3 27b)
 const chatContextManager = new ContextManager({
