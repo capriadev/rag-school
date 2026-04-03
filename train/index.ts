@@ -9,15 +9,16 @@
 import express from "express"
 import cors from "cors"
 import path from "path"
-import { fileURLToPath } from "url"
 
 import { uploadRouter } from "./api/upload.js"
 import { processRouter } from "./api/process.js"
 
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+
+// Usar process.cwd() para compatibilidad cross-platform (Windows/Linux/Mac)
+const TRAIN_DIR = path.join(process.cwd(), "train")
+const ADMIN_HTML_PATH = path.join(TRAIN_DIR, "admin.html")
 
 // Middleware
 app.use(cors())
@@ -25,7 +26,7 @@ app.use(express.json())
 
 // Serve admin UI
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "admin.html"))
+  res.sendFile(ADMIN_HTML_PATH)
 })
 
 // Rutas API
