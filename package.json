@@ -6,6 +6,7 @@
   "scripts": {
     "clean": "node scripts/clean-dev-cache.mjs",
     "dev": "node scripts/dev-server.mjs",
+    "train": "tsx train/index.ts",
     "prebuild": "node scripts/clean-dev-cache.mjs",
     "build": "next build",
     "start": "next start",
@@ -30,12 +31,19 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
 }
