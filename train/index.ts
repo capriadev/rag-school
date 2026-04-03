@@ -9,13 +9,15 @@
 import express from "express"
 import cors from "cors"
 import path from "path"
+import { fileURLToPath } from "url"
 
 import { uploadRouter } from "./api/upload.js"
 import { processRouter } from "./api/process.js"
 
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
-const __dirname = path.dirname(new URL(import.meta.url).pathname)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Middleware
 app.use(cors())
