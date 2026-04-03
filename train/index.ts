@@ -12,6 +12,7 @@ import path from "path"
 
 import { uploadRouter } from "./api/upload.js"
 import { processRouter } from "./api/process.js"
+import { profilesRouter } from "./api/profiles.js"
 
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 // Rutas API
 app.use("/api/upload", uploadRouter)
 app.use("/api/process", processRouter)
+app.use("/api/profiles", profilesRouter)
 
 // Health check
 app.get("/health", (req, res) => {

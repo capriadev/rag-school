@@ -268,8 +268,9 @@ Puede ser:
     const API_URL = 'http://localhost:3001';
     let currentProfileSource = 'local';
     
-    // URLs predefinidas
+    // URLs predefinidas - ahora usa el backend de entrenamiento directamente
     const PROFILE_URLS = {
+      train: API_URL + '/api/profiles',
       local: 'http://localhost:3000/api/profiles',
       vercel: 'https://ragcustom.vercel.app/api/profiles'
     };
@@ -292,12 +293,10 @@ Puede ser:
       document.getElementById('tab-' + tab).classList.add('active');
     }
     
-    // Cargar perfiles
+    // Cargar perfiles desde el backend de entrenamiento
     async function loadProfiles() {
-      const url = document.getElementById('profileApiUrl').value;
-      
       try {
-        const response = await fetch(url);
+        const response = await fetch(API_URL + '/api/profiles');
         const data = await response.json();
         
         const select = document.getElementById('profileSelect');
@@ -318,7 +317,7 @@ Puede ser:
       }
     }
     
-    // Crear perfil
+    // Crear perfil - ahora conectado a Supabase via training backend
     async function createProfile() {
       const name = document.getElementById('newProfileName').value.trim();
       const desc = document.getElementById('newProfileDesc').value.trim();
@@ -328,13 +327,28 @@ Puede ser:
         return;
       }
       
-      showStatus('Creando perfil... (conectando a Supabase)', 'info', 'createStatus');
+      showStatus('Creando perfil en Supabase...', 'info', 'createStatus');
       
-      // Aquí iría la llamada a API para crear perfil
-      // Por ahora solo mostramos mensaje informativo
-      setTimeout(function() {
-        showStatus('Función de crear perfil: necesita conexión directa a Supabase. Implementar en siguiente iteración.', 'info', 'createStatus');
-      }, 1000);
+      try {
+        const response = await fetch(API_URL + '/api/profiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, description: desc })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showStatus('Perfil "' + data.profile.name + '" creado exitosamente (ID: ' + data.profile.id_profile + ')', 'success', 'createStatus');
+          document.getElementById('newProfileName').value = '';
+          document.getElementById('newProfileDesc').value = '';
+          loadProfiles(); // Recargar lista
+        } else {
+          showStatus('Error: ' + data.error, 'error', 'createStatus');
+        }
+      } catch (error) {
+        showStatus('Error: ' + error.message, 'error', 'createStatus');
+      }
     }
     
     // Subir archivos
