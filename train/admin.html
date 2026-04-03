@@ -13,7 +13,7 @@
       min-height: 100vh;
       padding: 2rem;
     }
-    .container { max-width: 800px; margin: 0 auto; }
+    .container { max-width: 900px; margin: 0 auto; }
     h1 { font-size: 2rem; margin-bottom: 0.5rem; }
     h1 span { color: #5b4cff; }
     .subtitle { color: #8e8ea9; margin-bottom: 2rem; }
@@ -28,7 +28,7 @@
     
     .form-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.875rem; color: #8e8ea9; margin-bottom: 0.5rem; }
-    select, input[type="file"] {
+    select, input[type="file"], input[type="text"], textarea {
       width: 100%;
       padding: 0.75rem;
       background: #0a0a0f;
@@ -36,6 +36,10 @@
       border-radius: 8px;
       color: #ececf7;
       font-family: inherit;
+    }
+    textarea {
+      min-height: 200px;
+      resize: vertical;
     }
     
     button {
@@ -51,6 +55,37 @@
     }
     button:hover { background: #6c5cff; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary {
+      background: transparent;
+      border: 1px solid #5b4cff;
+      color: #5b4cff;
+    }
+    button.secondary:hover {
+      background: #5b4cff;
+      color: white;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #2a2a3a;
+      padding-bottom: 0.5rem;
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab:hover { background: #1a1a24; }
+    .tab.active {
+      background: #5b4cff;
+      color: white;
+    }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
     
     .status { 
       padding: 0.75rem; 
@@ -84,16 +119,38 @@
     .job-status.completed { background: #00e5b0; color: #0a0a0f; }
     .job-status.failed { background: #ff4c6b; color: white; }
     
-    .upload-area {
-      border: 2px dashed #2a2a3a;
-      border-radius: 12px;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s;
+    .file-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
     }
-    .upload-area:hover { border-color: #5b4cff; }
-    .upload-area.dragover { border-color: #5b4cff; background: rgba(91, 76, 255, 0.05); }
+    .file-type {
+      padding: 0.25rem 0.5rem;
+      background: #1a1a24;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #8e8ea9;
+    }
+    
+    .source-toggle {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .source-btn {
+      flex: 1;
+      padding: 0.5rem;
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .source-btn.active {
+      border-color: #5b4cff;
+      background: rgba(91, 76, 255, 0.1);
+    }
   </style>
 </head>
 <body>
@@ -101,24 +158,96 @@
     <h1>RAG <span>Custom</span></h1>
     <p class="subtitle">Panel de Administración - Entrenamiento Local</p>
     
+    <!-- Configuración de fuente de perfiles -->
     <div class="card">
-      <h3 style="margin-bottom: 1rem;">Subir Documento</h3>
+      <h3 style="margin-bottom: 1rem;">Fuente de Perfiles</h3>
+      <div class="source-toggle">
+        <div class="source-btn active" id="btnLocal" onclick="setProfileSource('local')">
+          <strong>Localhost</strong><br>
+          <small>http://localhost:3000</small>
+        </div>
+        <div class="source-btn" id="btnVercel" onclick="setProfileSource('vercel')">
+          <strong>Vercel</strong><br>
+          <small>ragcustom.vercel.app</small>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>URL de API de Perfiles (editable)</label>
+        <input type="text" id="profileApiUrl" value="http://localhost:3000/api/profiles">
+      </div>
+      <button onclick="loadProfiles()" style="margin-bottom: 1rem;">Recargar Perfiles</button>
       
       <div class="form-group">
-        <label>Perfil RAG</label>
+        <label>Perfil RAG Seleccionado</label>
         <select id="profileSelect">
           <option value="">Cargando perfiles...</option>
         </select>
       </div>
-      
+    </div>
+
+    <!-- Crear nuevo perfil -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Crear Nuevo Perfil</h3>
       <div class="form-group">
-        <label>Archivo (PDF, TXT, imágenes, etc.)</label>
-        <input type="file" id="fileInput" accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.mp3,.mp4,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+        <label>Nombre del Perfil</label>
+        <input type="text" id="newProfileName" placeholder="Ej: Escuela, Civil, Legal...">
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" id="newProfileDesc" placeholder="Descripción del perfil...">
+      </div>
+      <button onclick="createProfile()">Crear Perfil</button>
+      <div id="createStatus" class="status info" style="display: none;"></div>
+    </div>
+    
+    <!-- Entrenamiento -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Entrenar Perfil</h3>
+      
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('file')">Archivo</div>
+        <div class="tab" onclick="switchTab('text')">Texto</div>
       </div>
       
-      <button id="uploadBtn" onclick="uploadFile()">Subir y Procesar</button>
+      <!-- Tab: Archivo -->
+      <div id="tab-file" class="tab-content active">
+        <div class="form-group">
+          <label>Archivo</label>
+          <input type="file" id="fileInput" multiple>
+          <div class="file-types">
+            <span class="file-type">PDF</span>
+            <span class="file-type">TXT</span>
+            <span class="file-type">Markdown</span>
+            <span class="file-type">Imágenes</span>
+            <span class="file-type">Audio</span>
+            <span class="file-type">Video</span>
+            <span class="file-type">Excel</span>
+            <span class="file-type">CSV</span>
+            <span class="file-type">PPTX</span>
+            <span class="file-type">Word</span>
+            <span class="file-type">Código</span>
+          </div>
+        </div>
+        <button id="uploadBtn" onclick="uploadFiles()">Subir y Procesar Archivos</button>
+      </div>
       
-      <div id="status" class="status info" style="display: none;"></div>
+      <!-- Tab: Texto -->
+      <div id="tab-text" class="tab-content">
+        <div class="form-group">
+          <label>Texto para entrenar</label>
+          <textarea id="textInput" placeholder="Pega aquí el texto que quieres agregar al RAG...
+
+Puede ser:
+- Documentación
+- Notas
+- Transcripciones
+- Código
+- Cualquier texto plano"></textarea>
+        </div>
+        <button onclick="uploadText()">Procesar Texto</button>
+      </div>
+      
+      <div id="trainStatus" class="status info" style="display: none;"></div>
     </div>
     
     <div class="card">
@@ -137,117 +266,190 @@
 
   <script>
     const API_URL = 'http://localhost:3001';
+    let currentProfileSource = 'local';
     
-    // Cargar perfiles al iniciar
+    // URLs predefinidas
+    const PROFILE_URLS = {
+      local: 'http://localhost:3000/api/profiles',
+      vercel: 'https://ragcustom.vercel.app/api/profiles'
+    };
+    
+    // Cambiar fuente de perfiles
+    function setProfileSource(source) {
+      currentProfileSource = source;
+      document.getElementById('btnLocal').classList.toggle('active', source === 'local');
+      document.getElementById('btnVercel').classList.toggle('active', source === 'vercel');
+      document.getElementById('profileApiUrl').value = PROFILE_URLS[source];
+      loadProfiles();
+    }
+    
+    // Cambiar tabs
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+    
+    // Cargar perfiles
     async function loadProfiles() {
+      const url = document.getElementById('profileApiUrl').value;
+      
       try {
-        // Usar la API de perfiles del frontend (puerto 3000)
-        const response = await fetch('/api/profiles');
+        const response = await fetch(url);
         const data = await response.json();
         
         const select = document.getElementById('profileSelect');
         if (data.success && data.profiles) {
-          select.innerHTML = data.profiles.map(p => 
-            `<option value="${p.id_profile}">${p.name}</option>`
-          ).join('');
+          if (data.profiles.length === 0) {
+            select.innerHTML = '<option value="">No hay perfiles - crea uno nuevo</option>';
+          } else {
+            select.innerHTML = data.profiles.map(p => 
+              '<option value="' + p.id_profile + '">' + p.name + (p.description ? ' - ' + p.description : '') + '</option>'
+            ).join('');
+          }
         } else {
           select.innerHTML = '<option value="">Error cargando perfiles</option>';
         }
       } catch (error) {
         document.getElementById('profileSelect').innerHTML = 
-          '<option value="">Error: ¿Está corriendo el frontend? (npm run dev)</option>';
+          '<option value="">Error: ' + error.message + '</option>';
       }
     }
     
-    // Subir archivo
-    async function uploadFile() {
+    // Crear perfil
+    async function createProfile() {
+      const name = document.getElementById('newProfileName').value.trim();
+      const desc = document.getElementById('newProfileDesc').value.trim();
+      
+      if (!name) {
+        showStatus('Ingresa un nombre para el perfil', 'error', 'createStatus');
+        return;
+      }
+      
+      showStatus('Creando perfil... (conectando a Supabase)', 'info', 'createStatus');
+      
+      // Aquí iría la llamada a API para crear perfil
+      // Por ahora solo mostramos mensaje informativo
+      setTimeout(function() {
+        showStatus('Función de crear perfil: necesita conexión directa a Supabase. Implementar en siguiente iteración.', 'info', 'createStatus');
+      }, 1000);
+    }
+    
+    // Subir archivos
+    async function uploadFiles() {
       const fileInput = document.getElementById('fileInput');
       const profileSelect = document.getElementById('profileSelect');
-      const status = document.getElementById('status');
-      const btn = document.getElementById('uploadBtn');
       
-      if (!fileInput.files[0]) {
-        showStatus('Selecciona un archivo', 'error');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showStatus('Selecciona al menos un archivo', 'error', 'trainStatus');
         return;
       }
       if (!profileSelect.value) {
-        showStatus('Selecciona un perfil', 'error');
+        showStatus('Selecciona un perfil', 'error', 'trainStatus');
         return;
       }
       
-      btn.disabled = true;
-      showStatus('Subiendo archivo...', 'info');
+      const files = Array.from(fileInput.files);
+      showStatus('Procesando ' + files.length + ' archivo(s)...', 'info', 'trainStatus');
+      
+      for (let i = 0; i < files.length; i++) {
+        try {
+          await processFile(files[i], profileSelect.value);
+        } catch (error) {
+          showStatus('Error con ' + files[i].name + ': ' + error.message, 'error', 'trainStatus');
+          return;
+        }
+      }
+      
+      showStatus(files.length + ' archivo(s) enviados a procesamiento', 'success', 'trainStatus');
+      loadJobs();
+    }
+    
+    // Procesar archivo individual
+    async function processFile(file, profileId) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('profileId', profileId);
+      
+      const uploadRes = await fetch(API_URL + '/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const uploadData = await uploadRes.json();
+      
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Error al subir');
+      }
+      
+      const processRes = await fetch(API_URL + '/api/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId: uploadData.file.id,
+          profileId: profileId
+        })
+      });
+      
+      const processData = await processRes.json();
+      
+      if (!processData.success) {
+        throw new Error(processData.error);
+      }
+    }
+    
+    // Subir texto
+    async function uploadText() {
+      const text = document.getElementById('textInput').value.trim();
+      const profileSelect = document.getElementById('profileSelect');
+      
+      if (!text) {
+        showStatus('Ingresa texto para procesar', 'error', 'trainStatus');
+        return;
+      }
+      if (!profileSelect.value) {
+        showStatus('Selecciona un perfil', 'error', 'trainStatus');
+        return;
+      }
+      
+      showStatus('Enviando texto a procesamiento...', 'info', 'trainStatus');
       
       try {
-        // Paso 1: Subir archivo
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('profileId', profileSelect.value);
+        // Crear un blob de texto y enviarlo como archivo
+        const blob = new Blob([text], { type: 'text/plain' });
+        const file = new File([blob], 'texto-' + Date.now() + '.txt', { type: 'text/plain' });
         
-        const uploadRes = await fetch(`${API_URL}/api/upload`, {
-          method: 'POST',
-          body: formData
-        });
+        await processFile(file, profileSelect.value);
         
-        const uploadData = await uploadRes.json();
-        
-        if (!uploadData.success) {
-          throw new Error(uploadData.error || 'Error al subir');
-        }
-        
-        showStatus('Archivo subido. Enviando a procesamiento...', 'info');
-        
-        // Paso 2: Procesar con n8n
-        const processRes = await fetch(`${API_URL}/api/process`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileId: uploadData.file.id,
-            profileId: profileSelect.value
-          })
-        });
-        
-        const processData = await processRes.json();
-        
-        if (processData.success) {
-          showStatus(`Job creado: ${processData.jobId}. El procesamiento es asíncrono.`, 'success');
-          loadJobs();
-        } else {
-          throw new Error(processData.error);
-        }
-        
+        showStatus('Texto enviado a procesamiento exitosamente', 'success', 'trainStatus');
+        document.getElementById('textInput').value = '';
+        loadJobs();
       } catch (error) {
-        showStatus('Error: ' + error.message, 'error');
-      } finally {
-        btn.disabled = false;
+        showStatus('Error: ' + error.message, 'error', 'trainStatus');
       }
     }
     
     // Mostrar estado
-    function showStatus(message, type) {
-      const status = document.getElementById('status');
+    function showStatus(message, type, elementId) {
+      const status = document.getElementById(elementId);
       status.textContent = message;
-      status.className = `status ${type}`;
+      status.className = 'status ' + type;
       status.style.display = 'block';
     }
     
     // Cargar jobs
     async function loadJobs() {
       try {
-        const response = await fetch(`${API_URL}/api/process/jobs`);
+        const response = await fetch(API_URL + '/api/process/jobs');
         const data = await response.json();
         
         const container = document.getElementById('jobsList');
         if (data.jobs && data.jobs.length > 0) {
-          container.innerHTML = data.jobs.map(job => `
-            <div class="job-item">
-              <div>
-                <strong>${job.id.slice(0, 20)}...</strong>
-                <br><small style="color: #8e8ea9;">Perfil: ${job.profileId}</small>
-              </div>
-              <span class="job-status ${job.status}">${job.status}</span>
-            </div>
-          `).join('');
+          container.innerHTML = data.jobs.map(function(job) {
+            return '<div class="job-item"><div><strong>' + job.id.slice(0, 20) + '...</strong><br><small style="color: #8e8ea9;">Perfil: ' + job.profileId + '</small></div><span class="job-status ' + job.status + '">' + job.status + '</span></div>';
+          }).join('');
         } else {
           container.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No hay jobs activos</p>';
         }
@@ -260,14 +462,13 @@
     // Cargar estado del sistema
     async function loadSystemStatus() {
       try {
-        const response = await fetch(`${API_URL}/api/status`);
+        const response = await fetch(API_URL + '/api/status');
         const data = await response.json();
         
-        document.getElementById('systemStatus').innerHTML = `
-          <p><strong>Estado:</strong> ${data.status}</p>
-          <p><strong>n8n Webhook:</strong> ${data.n8nWebhook}</p>
-          <p><strong>Upload Path:</strong> ${data.uploadPath}</p>
-        `;
+        document.getElementById('systemStatus').innerHTML = 
+          '<p><strong>Estado:</strong> ' + data.status + '</p>' +
+          '<p><strong>n8n Webhook:</strong> ' + data.n8nWebhook + '</p>' +
+          '<p><strong>Upload Path:</strong> ' + data.uploadPath + '</p>';
       } catch (error) {
         document.getElementById('systemStatus').innerHTML = 
           '<p style="color: #ff4c6b;">Error: ¿Está corriendo el training backend? (npm run train)</p>';
@@ -278,7 +479,7 @@
     loadProfiles();
     loadSystemStatus();
     loadJobs();
-    setInterval(loadJobs, 5000); // Auto-refresh cada 5s
+    setInterval(loadJobs, 5000);
   </script>
 </body>
 </html>
