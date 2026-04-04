@@ -125,11 +125,10 @@ export async function exportVectorStoreSnapshot(): Promise<VectorDocumentRow[]> 
   return listDocuments(true)
 }
 
-export async function getProfiles(): Promise<Array<{ id_profile: number; name: string; description: string | null }>> {
+export async function getProfiles(): Promise<Array<{ id_profile: number; name: string; description: string | null; active: boolean }>> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id_profile, name, description")
-    .eq("active", true)
+    .select("id_profile, name, description, active")
     .order("name")
 
   if (error) {

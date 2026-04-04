@@ -84,9 +84,13 @@ Implemented an advanced context management system with auto-compaction for both 
 **Commits**:
 - `feat(context): implement token estimation, prompt classifier, EMA ratio calculator`
 - `feat(context): integrate ContextManager into chat.ts for Gemma 3 27b with auto-compaction`
+- `fix: file input styling in training page`
+- `fix: profile active status detection in admin.html`
 
 **What we did**:
 - Created `lib/server/context-manager.ts` with full context management system
+- Fixed file input styling in `train/admin.html` with custom wrapper and button
+- Fixed profile active status detection to handle multiple boolean formats (true, 'true', 1, 'TRUE')
 - Token estimation based on character count (~4 chars = 1 token)
 - Prompt classifier (short/medium/long) with keyword detection
 - EMA ratio calculator with clamping and feedback loop
@@ -131,7 +135,29 @@ Implemented an advanced context management system with auto-compaction for both 
 - Added "Workflow n8n" button for PDF training
 - PDFs now processed via local n8n workflow at `http://localhost:5678/webhook/entrenar`
 
-#### 4. Input Design Iterations
+#### 4. Training UI Fixes - Profile Status & File Input
+**Priority**: HIGH ✅ COMPLETED
+
+**Commits**:
+- `fix: file input styling in training page`
+- `fix: profile active status detection in admin.html`
+
+**Changes**:
+- Fixed file input styling in `train/admin.html` with custom wrapper
+  - Button: purple (#5b4cff), text: gray (#8e8ea9)
+  - Hidden native file input with `opacity: 0`, `z-index: 10`, `font-size: 0`
+  - Shows selected filename or count via `updateFileInputText()`
+- Fixed profile active status detection
+  - Now handles multiple boolean formats from Supabase: `true`, `'true'`, `1`, `'TRUE'`
+  - Active profiles: green left border (#00e5b0)
+  - Inactive profiles: red left border (#ff4c6b)
+  - Removed filter in `getProfiles()` to show all profiles (active + inactive)
+
+**Files modified**:
+- `train/admin.html` - CSS for file-input-wrapper, renderProfileItem function
+- `lib/server/supabase.ts` - Removed `.eq("active", true)` filter, added `active` to select
+
+#### 5. Input Design Iterations
 **Commits**:
 - `style: add textarea scroll and custom select arrows`
 - `style: add custom arrows to selects and improve textarea scroll`
@@ -455,25 +481,33 @@ User Input → Classify Prompt → Predict Overflow → [Compact if needed] → 
 - `components/chat-interface.tsx`
 - Install: `npm install katex react-katex` or `npm install react-syntax-highlighter`
 
-### 7. Training System Separation
-**Priority**: MEDIUM
+### 7. Training System Separation - COMPLETED
+**Priority**: COMPLETED ✅
 
-**Tasks**:
-- [ ] Create separate training UI (reuse components)
-- [ ] Add `npm run train` script to package.json
-- [ ] Create training-specific routes
-- [ ] Keep training UI local-only
-- [ ] Document how to run training locally
-- [ ] Ensure training doesn't deploy to Vercel
+**Status**: Training backend working locally with `npm run train`
 
-**Files to create**:
-- `app/admin/page.tsx` (new)
-- `app/admin/layout.tsx` (new)
-- `scripts/train-server.mjs` (new)
+**Implementation**:
+- Created `train/index.ts` - Express server for training operations
+- Runs on port 3001 (separate from Next.js dev server on 3000)
+- Admin interface at `train/admin.html` for profile management
+- File upload and text training endpoints
+- Profile CRUD operations
+- Jobs tracking system
 
-**Files to modify**:
-- `package.json` (add train script)
-- `next.config.mjs` (exclude admin from production)
+**Commands**:
+```bash
+npm run train    # Start training backend on http://localhost:3001
+```
+
+**Files created**:
+- `train/index.ts` - Training server with Express
+- `train/admin.html` - Admin interface for training
+- `train/package.json` - Separate deps for training server
+
+**Notes**:
+- Training backend is LOCAL ONLY - never deploy to Vercel
+- Uses `tsx` for TypeScript execution
+- Connects to same Supabase database
 
 ### 8. n8n Workflow Redesign
 **Priority**: MEDIUM
@@ -661,5 +695,5 @@ docker stop n8n      # Stop n8n container
 
 ---
 
-**Last Updated**: Database schema migration completed - normalized multi-profile structure with IVFFlat index  
+**Last Updated**: Training UI fixes completed - file input styling and profile active status detection fixed  
 **Status**: Ready for next session - UI foundation solid, backend work needed

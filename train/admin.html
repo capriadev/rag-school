@@ -28,7 +28,7 @@
     
     .form-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.875rem; color: #8e8ea9; margin-bottom: 0.5rem; }
-    select, input[type="file"], input[type="text"], textarea {
+    select, input[type="text"], textarea {
       width: 100%;
       padding: 0.75rem;
       background: #0a0a0f;
@@ -40,6 +40,49 @@
     textarea {
       min-height: 200px;
       resize: vertical;
+    }
+    
+    /* Custom file input styling */
+    .file-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: #0a0a0f;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .file-input-wrapper:hover {
+      border-color: #5b4cff;
+    }
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+      font-size: 0;
+    }
+    .file-input-btn {
+      background: #5b4cff;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .file-input-text {
+      color: #8e8ea9;
+      font-size: 0.875rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     button {
@@ -146,13 +189,22 @@
     .profile-item.active-profile { border-left-color: #00e5b0; }
     .profile-item:hover { background: #1a1a24; }
     .profile-info { flex: 1; }
-    .profile-name { font-weight: 500; color: #ececf7; }
+    .profile-name { font-weight: 500; color: #ececf7; display: flex; align-items: center; }
     .profile-desc { font-size: 0.75rem; color: #8e8ea9; }
     .profile-actions { display: flex; gap: 0.5rem; }
     .profile-actions button {
       padding: 0.25rem 0.75rem;
       font-size: 0.75rem;
     }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    .status-dot.active { background: #00e5b0; }
+    .status-dot.inactive { background: #ff4c6b; }
     .btn-small {
       padding: 0.25rem 0.75rem !important;
       font-size: 0.75rem !important;
@@ -345,7 +397,11 @@
       <div id="tab-file" class="tab-content active">
         <div class="form-group">
           <label>Archivo</label>
-          <input type="file" id="fileInput" multiple>
+          <div class="file-input-wrapper">
+            <span class="file-input-btn">Elegir archivos</span>
+            <span class="file-input-text" id="fileInputText">Ningún archivo seleccionado</span>
+            <input type="file" id="fileInput" multiple onchange="updateFileInputText()">
+          </div>
           <div class="file-types">
             <span class="file-type">PDF</span>
             <span class="file-type">TXT</span>
@@ -402,6 +458,10 @@ Puede ser:
     let filteredProfiles = [];
     let currentPage = 1;
     const PROFILES_PER_PAGE = 10;
+
+    function isActiveValue(value) {
+      return value === true || value === 'true' || value === 1 || value === '1' || value === 'TRUE';
+    }
     
     // Modal functions
     function openCreateModal() {
@@ -414,11 +474,12 @@ Puede ser:
       document.getElementById('createModal').classList.remove('active');
     }
     function openEditModal(profile) {
+      const isActive = isActiveValue(profile.active);
       document.getElementById('editProfileId').value = profile.id_profile;
       document.getElementById('editProfileName').value = profile.name;
       document.getElementById('editProfileDesc').value = profile.description || '';
-      document.getElementById('editProfileActive').value = profile.active ? 'true' : 'false';
-      updateEditStatusUI(profile.active);
+      document.getElementById('editProfileActive').value = isActive ? 'true' : 'false';
+      updateEditStatusUI(isActive);
       document.getElementById('editStatus').style.display = 'none';
       document.getElementById('editModal').classList.add('active');
     }
@@ -476,25 +537,24 @@ Puede ser:
         const data = await response.json();
         
         if (data.success && data.profiles) {
-          allProfiles = data.profiles;
+          allProfiles = data.profiles.map(p => ({ ...p, active: isActiveValue(p.active) }));
           filteredProfiles = allProfiles;
           
           // Mostrar buscador si hay +20 perfiles
           document.getElementById('searchContainer').style.display = allProfiles.length > 20 ? 'block' : 'none';
           
-          // Actualizar select
-          if (data.profiles.length === 0) {
-            select.innerHTML = '<option value="">No hay perfiles - crea uno nuevo</option>';
-            list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No hay perfiles. Crea uno nuevo para comenzar.</p>';
-            document.getElementById('pagination').style.display = 'none';
+          // Actualizar select - solo perfiles activos
+          const activeProfiles = allProfiles.filter(p => p.active);
+          if (activeProfiles.length === 0) {
+            select.innerHTML = '<option value="">No hay perfiles activos</option>';
           } else {
-            select.innerHTML = data.profiles.map(p => 
+            select.innerHTML = activeProfiles.map(p => 
               '<option value="' + p.id_profile + '">' + p.name + '</option>'
             ).join('');
-            
-            // Renderizar lista paginada
-            renderProfiles();
           }
+          
+          // Renderizar lista paginada (todos los perfiles)
+          renderProfiles();
         } else {
           select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta inválida') + '</option>';
           list.innerHTML = '<p style="color: #ff4c6b; text-align: center;">Error cargando perfiles</p>';
@@ -594,7 +654,8 @@ Puede ser:
     }
     
     function renderProfileItem(p) {
-      const activeClass = p.active ? 'active-profile' : '';
+      const isActive = isActiveValue(p.active);
+      const activeClass = isActive ? 'active-profile' : '';
       return '<div class="profile-item ' + activeClass + '" id="profile-' + p.id_profile + '">' +
         '<div class="profile-info">' +
           '<div class="profile-name">' + p.name + (p.doc_count > 0 ? ' (' + p.doc_count + ' docs)' : '') + '</div>' +
@@ -695,6 +756,19 @@ Puede ser:
     // Resto de funciones...
     
     // Subir archivos
+    function updateFileInputText() {
+      const fileInput = document.getElementById('fileInput');
+      const fileInputText = document.getElementById('fileInputText');
+      if (fileInput.files && fileInput.files.length > 0) {
+        const count = fileInput.files.length;
+        fileInputText.textContent = count === 1 ? fileInput.files[0].name : `${count} archivos seleccionados`;
+        fileInputText.style.color = '#ececf7';
+      } else {
+        fileInputText.textContent = 'Ningún archivo seleccionado';
+        fileInputText.style.color = '#8e8ea9';
+      }
+    }
+    
     async function uploadFiles() {
       const fileInput = document.getElementById('fileInput');
       const profileSelect = document.getElementById('profileSelect');

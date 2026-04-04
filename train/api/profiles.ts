@@ -22,6 +22,7 @@ router.get("/", async (req, res) => {
         id_profile: p.id_profile,
         name: p.name,
         description: p.description,
+        active: p.active,
         doc_count: p.doc_count,
       })),
     })
@@ -87,6 +88,7 @@ router.post("/", async (req, res) => {
         id_profile: profile.id_profile,
         name: profile.name,
         description: profile.description,
+        active: profile.active,
         doc_count: 0,
       },
     })
