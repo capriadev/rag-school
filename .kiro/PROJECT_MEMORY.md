@@ -679,13 +679,21 @@ docker stop n8n      # Stop n8n container
 
 ## Current State Summary
 
-**UI**: ✅ Complete and professional  
-**Backend**: ⚠️ Needs multi-profile support  
-**Database**: ✅ Schema migrated - normalized structure with users, profiles, documents tables  
-**Auth**: ❌ Not implemented  
-**Chat History**: ❌ Not implemented  
-**Training**: ⚠️ Works but needs separation  
-**n8n**: ⚠️ Works but needs redesign  
+**UI**: ✅ Complete and professional
+**Backend**: ✅ Profile selector cache issues fixed (aggressive no-cache headers + auto-reload on focus/visibilitychange)
+**Database**: ✅ Schema migrated - normalized structure with users, profiles, documents tables
+**Auth**: ❌ Not implemented
+**Chat History**: ❌ Not implemented
+**Training**: ✅ Works, env loading normalized
+**n8n**: ⚠️ Works but needs redesign
+
+**Issues Fixed (Session Apr 4)**:
+- Profile selector (`chat-interface.tsx`) now properly reloads profiles without stale data:
+  - `fetch` uses `cache: "no-store"` + anti-cache headers
+  - Triggers reload on: mount, `visibilitychange`, `focus`, `pageshow`, `Nuevo chat`
+  - API route (`/api/profiles`) forces no-store with `revalidate = 0`, `fetchCache = "force-no-store"`
+  - If selected RAG becomes unavailable, selector resets to "Chat" automatically
+- **Key Finding**: Train (3001) and Next (3000) were returning different `active` states for same profile due to separate env loading paths. Now both use consistent Supabase config.
 
 **Next Critical Steps**:
 1. Database schema migration
@@ -695,5 +703,5 @@ docker stop n8n      # Stop n8n container
 
 ---
 
-**Last Updated**: Training UI fixes completed - file input styling and profile active status detection fixed  
-**Status**: Ready for next session - UI foundation solid, backend work needed
+**Last Updated**: Profile selector cache/sync fixes completed
+**Status**: Selector now reflects active/inactive RAGs correctly on refresh/focus

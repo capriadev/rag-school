@@ -27,7 +27,7 @@ const PLACEHOLDERS = [
 export function ChatInterface() {
   const [question, setQuestion] = useState("")
   const [chunkCount, setChunkCount] = useState(5)
-  const [selectedProfile, setSelectedProfile] = useState("")
+  const [selectedProfile, setSelectedProfile] = useState("chat")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
@@ -37,28 +37,74 @@ export function ChatInterface() {
   const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
   const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
+  const loadProfiles = useCallback(async () => {
+    setProfilesLoading(true)
+    try {
+      const response = await fetch(`/api/profiles?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      })
+      const data = await response.json()
+      if (data.success && Array.isArray(data.profiles)) {
+        setProfiles(data.profiles)
+        return
+      }
+      setProfiles([])
+    } catch (error) {
+      console.error("Failed to load profiles:", error)
+      setProfiles([])
+    } finally {
+      setProfilesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedProfile === "chat") return
+
+    const selectedId = Number(selectedProfile)
+    if (Number.isNaN(selectedId)) {
+      setSelectedProfile("chat")
+      return
+    }
+
+    const stillExists = profiles.some((p) => p.id_profile === selectedId)
+    if (!stillExists) {
+      setSelectedProfile("chat")
+    }
+  }, [profiles, selectedProfile])
 
   // Token tracking - dynamic based on mode (CHAT uses 64k for Gemma, RAG varies)
   const MAX_CONTEXT_TOKENS = selectedProfile === "chat" ? 64000 : 32000
   const [usedTokens, setUsedTokens] = useState(0)
 
-  // Load profiles from API on mount
+  // Load profiles from API on mount and when tab becomes visible/focused
   useEffect(() => {
-    async function loadProfiles() {
-      try {
-        const response = await fetch("/api/profiles")
-        const data = await response.json()
-        if (data.success && data.profiles) {
-          setProfiles(data.profiles)
-        }
-      } catch (error) {
-        console.error("Failed to load profiles:", error)
-      } finally {
-        setProfilesLoading(false)
+    loadProfiles()
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadProfiles()
       }
     }
-    loadProfiles()
-  }, [])
+    const handleFocus = () => {
+      loadProfiles()
+    }
+    const handlePageShow = () => {
+      loadProfiles()
+    }
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+    window.addEventListener("pageshow", handlePageShow)
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+      window.removeEventListener("pageshow", handlePageShow)
+    }
+  }, [loadProfiles])
 
   // Rotate placeholder on mount
   useEffect(() => {
@@ -197,6 +243,7 @@ export function ChatInterface() {
     setMessages([])
     setHasStartedChat(false)
     setQuestion("")
+    loadProfiles()
   }
 
   return (
@@ -337,13 +384,18 @@ export function ChatInterface() {
                           disabled={profilesLoading}
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
-                          <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
                           <option value="chat">Chat</option>
-                          {profiles.map((profile) => (
-                            <option key={profile.id_profile} value={profile.id_profile}>
-                              {profile.name}
-                            </option>
-                          ))}
+                          {profilesLoading ? (
+                            <option value="" disabled>...</option>
+                          ) : profiles.length === 0 ? (
+                            <option value="" disabled>Sin RAGs</option>
+                          ) : (
+                            profiles.map((profile) => (
+                              <option key={profile.id_profile} value={profile.id_profile}>
+                                {profile.name}
+                              </option>
+                            ))
+                          )}
                         </select>
                         <svg
                           className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
@@ -534,13 +586,18 @@ export function ChatInterface() {
                           disabled={profilesLoading}
                           className="cursor-pointer appearance-none bg-transparent py-1 pr-6 text-xs text-[#8e8ea9] transition hover:text-[#ececf7] focus:outline-none disabled:opacity-50"
                         >
-                          <option value="">{profilesLoading ? "Cargando..." : "RAG"}</option>
                           <option value="chat">Chat</option>
-                          {profiles.map((profile) => (
-                            <option key={profile.id_profile} value={profile.id_profile}>
-                              {profile.name}
-                            </option>
-                          ))}
+                          {profilesLoading ? (
+                            <option value="" disabled>...</option>
+                          ) : profiles.length === 0 ? (
+                            <option value="" disabled>Sin RAGs</option>
+                          ) : (
+                            profiles.map((profile) => (
+                              <option key={profile.id_profile} value={profile.id_profile}>
+                                {profile.name}
+                              </option>
+                            ))
+                          )}
                         </select>
                         <svg
                           className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[#8e8ea9]"
