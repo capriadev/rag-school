@@ -1,14 +1,8 @@
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseClient as getSharedSupabaseClient } from "@rag/data"
 import { config } from "./config"
 import { GEMINI_EMBEDDING_DIMENSION } from "./embeddings"
 import type { InsertDocument, MatchDocument, VectorDocumentRow, VectorStoreMetrics } from "../shared/types"
-
-const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-})
+const supabase = getSharedSupabaseClient()
 
 export function getSupabaseClient() {
   return supabase
