@@ -141,9 +141,10 @@
       background: #0a0a0f;
       border-radius: 8px;
       margin-bottom: 0.5rem;
+      border-left: 4px solid #ff4c6b;
     }
+    .profile-item.active-profile { border-left-color: #00e5b0; }
     .profile-item:hover { background: #1a1a24; }
-    .profile-item.active { border: 1px solid #5b4cff; }
     .profile-info { flex: 1; }
     .profile-name { font-weight: 500; color: #ececf7; }
     .profile-desc { font-size: 0.75rem; color: #8e8ea9; }
@@ -156,41 +157,17 @@
       padding: 0.25rem 0.75rem !important;
       font-size: 0.75rem !important;
     }
-    .toggle-switch {
-      position: relative;
+    .status-badge {
       display: inline-block;
-      width: 44px;
-      height: 24px;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
     }
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #2a2a3a;
-      transition: .3s;
-      border-radius: 24px;
-    }
-    .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-    }
-    input:checked + .toggle-slider { background-color: #00e5b0; }
-    input:checked + .toggle-slider:before { transform: translateX(20px); }
+    .status-badge.active { background: rgba(0, 229, 176, 0.2); color: #00e5b0; }
+    .status-badge.inactive { background: rgba(255, 76, 107, 0.2); color: #ff4c6b; }
     
     .modal {
       display: none;
@@ -290,6 +267,14 @@
           <button class="modal-close" onclick="closeEditModal()">&times;</button>
         </div>
         <input type="hidden" id="editProfileId">
+        <input type="hidden" id="editProfileActive">
+        <div class="form-group">
+          <label>Estado</label>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span id="editStatusBadge" class="status-badge">Activo</span>
+            <button type="button" id="editToggleBtn" class="secondary btn-small" onclick="toggleEditProfile()">Desactivar</button>
+          </div>
+        </div>
         <div class="form-group">
           <label>Nombre</label>
           <input type="text" id="editProfileName">
@@ -300,7 +285,7 @@
         </div>
         <div class="btn-group">
           <button class="secondary" onclick="closeEditModal()">Cancelar</button>
-          <button onclick="saveProfile()">Guardar</button>
+          <button onclick="saveProfile()">Guardar Cambios</button>
         </div>
         <div id="editStatus" class="status info" style="display: none; margin-top: 1rem;"></div>
       </div>
@@ -388,8 +373,30 @@ Puede ser:
       document.getElementById('editProfileId').value = profile.id_profile;
       document.getElementById('editProfileName').value = profile.name;
       document.getElementById('editProfileDesc').value = profile.description || '';
+      document.getElementById('editProfileActive').value = profile.active ? 'true' : 'false';
+      updateEditStatusUI(profile.active);
       document.getElementById('editStatus').style.display = 'none';
       document.getElementById('editModal').classList.add('active');
+    }
+    
+    function updateEditStatusUI(active) {
+      const badge = document.getElementById('editStatusBadge');
+      const btn = document.getElementById('editToggleBtn');
+      if (active) {
+        badge.textContent = 'Activo';
+        badge.className = 'status-badge active';
+        btn.textContent = 'Desactivar';
+      } else {
+        badge.textContent = 'Inactivo';
+        badge.className = 'status-badge inactive';
+        btn.textContent = 'Activar';
+      }
+    }
+    
+    function toggleEditProfile() {
+      const current = document.getElementById('editProfileActive').value === 'true';
+      document.getElementById('editProfileActive').value = (!current).toString();
+      updateEditStatusUI(!current);
     }
     function closeEditModal() {
       document.getElementById('editModal').classList.remove('active');
@@ -451,16 +458,13 @@ Puede ser:
     }
     
     function renderProfileItem(p) {
-      return '<div class="profile-item" id="profile-' + p.id_profile + '">' +
+      const activeClass = p.active ? 'active-profile' : '';
+      return '<div class="profile-item ' + activeClass + '" id="profile-' + p.id_profile + '">' +
         '<div class="profile-info">' +
           '<div class="profile-name">' + p.name + (p.doc_count > 0 ? ' (' + p.doc_count + ' docs)' : '') + '</div>' +
           '<div class="profile-desc">' + (p.description || 'Sin descripción') + '</div>' +
         '</div>' +
         '<div class="profile-actions">' +
-          '<label class="toggle-switch" title="Activar/Desactivar">' +
-            '<input type="checkbox" ' + (p.active ? 'checked' : '') + ' onchange="toggleProfile(' + p.id_profile + ', this.checked)">' +
-            '<span class="toggle-slider"></span>' +
-          '</label>' +
           '<button class="btn-small secondary" onclick="openEditModalById(' + p.id_profile + ')">Editar</button>' +
         '</div>' +
       '</div>';
@@ -469,30 +473,6 @@ Puede ser:
     function openEditModalById(id) {
       const profile = allProfiles.find(p => p.id_profile === id);
       if (profile) openEditModal(profile);
-    }
-    
-    // Toggle profile active state
-    async function toggleProfile(id, active) {
-      try {
-        const response = await fetch(API_URL + '/api/profiles/' + id, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ active: active })
-        });
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Error al actualizar');
-        }
-        
-        // Recargar para actualizar la lista
-        loadProfiles();
-      } catch (error) {
-        console.error('Error toggling profile:', error);
-        alert('Error: ' + error.message);
-        loadProfiles(); // Reset to correct state
-      }
     }
     
     // Crear perfil
@@ -536,6 +516,7 @@ Puede ser:
       const id = parseInt(document.getElementById('editProfileId').value);
       const name = document.getElementById('editProfileName').value.trim();
       const desc = document.getElementById('editProfileDesc').value.trim();
+      const active = document.getElementById('editProfileActive').value === 'true';
       
       if (!name) {
         showStatus('El nombre es requerido', 'error', 'editStatus');
@@ -548,7 +529,7 @@ Puede ser:
         const response = await fetch(API_URL + '/api/profiles/' + id, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, description: desc })
+          body: JSON.stringify({ name: name, description: desc, active: active })
         });
         
         const data = await response.json();
