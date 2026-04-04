@@ -1,0 +1,7 @@
+[
+  { "name": "frontend", "description": "UI/UX and component architecture", "status": "planned" },
+  { "name": "rags", "description": "Retrieval and profile-driven query pipeline", "status": "planned" },
+  { "name": "db", "description": "Supabase data access and schema operations", "status": "planned" },
+  { "name": "backend", "description": "API/services for web and train runtimes", "status": "planned" },
+  { "name": "n8n", "description": "Local training orchestration workflows", "status": "planned" }
+]

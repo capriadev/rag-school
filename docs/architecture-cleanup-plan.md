@@ -30,12 +30,12 @@
 
 ## Fases de migracion
 
-1. Fase 1 - Unificacion de dominio (en curso)
+1. Fase 1 - Unificacion de dominio (completada)
 - Mover y unificar operaciones de perfiles en `lib/server/profiles.ts`.
 - Hacer que `app/api/profiles` y `train/api/db.ts` consuman ese modulo.
 - Mantener compatibilidad de APIs actuales.
 
-2. Fase 2 - Modularizacion UI
+2. Fase 2 - Modularizacion UI (en curso)
 - Extraer de `chat-interface.tsx`:
   - `ChatHeader`
   - `ChatComposer`
@@ -76,8 +76,10 @@
 ## Entregables tecnicos por sprint de limpieza
 
 - Sprint A:
-  - Unificacion de perfiles (hecho en esta iteracion)
-  - Documento de arquitectura base (este archivo)
+  - Unificacion de perfiles (hecho)
+  - Documento de arquitectura base (hecho)
+  - Bootstrap monorepo (`apps/*` + `packages/*`) (hecho)
+  - Inicializacion `.agent/` (hecho)
 - Sprint B:
   - Primer corte de `chat-interface.tsx` en subcomponentes
   - Hook `useProfiles`

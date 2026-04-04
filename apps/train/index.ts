@@ -17,8 +17,8 @@ import { profilesRouter } from "./api/profiles.js"
 const app = express()
 const PORT = process.env.TRAIN_PORT || 3001
 
-// Usar process.cwd() para compatibilidad cross-platform (Windows/Linux/Mac)
-const TRAIN_DIR = path.join(process.cwd(), "train")
+// Runtime local rooted at apps/train
+const TRAIN_DIR = process.cwd()
 const ADMIN_HTML_PATH = path.join(TRAIN_DIR, "admin.html")
 
 // Middleware
@@ -45,7 +45,7 @@ app.get("/api/status", (req, res) => {
   res.json({
     status: "ready",
     n8nWebhook: process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/train",
-    uploadPath: path.join(process.cwd(), "train", "uploads"),
+    uploadPath: path.join(process.cwd(), "uploads"),
   })
 })
 

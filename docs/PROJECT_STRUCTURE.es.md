@@ -1,70 +1,42 @@
 # Estructura del Proyecto
 
-Este documento describe la estructura actual del repositorio despues de mover la logica principal fuera de `n8n` y llevarla a codigo.
-
-## Estructura Actual del Repositorio
+Layout actual del repositorio despues del bootstrap de migracion modular:
 
 ```text
 rag-school/
+|-- apps/
+|   |-- web/                    # Runtime Next.js (chat/query)
+|   |   |-- app/
+|   |   |-- components/
+|   |   |-- lib/
+|   |   `-- public/
+|   `-- train/                  # Runtime local de entrenamiento (Express + admin UI)
+|       |-- api/
+|       |-- admin.html
+|       `-- index.ts
+|-- packages/
+|   |-- core/                   # servicios de dominio compartidos (bootstrap)
+|   |-- data/                   # capa de datos compartida (bootstrap)
+|   |-- contracts/              # contratos API/errores compartidos
+|   |-- ui/                     # tokens/componentes UI compartidos (bootstrap)
+|   `-- config/                 # placeholder de configuracion compartida
+|-- .agent/                     # contexto operativo del agente y registro de errores
 |-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
-|-- server/
-|   |-- config.js
-|   |-- index.js
-|   `-- services/
-|       |-- chunking.js
-|       |-- gemini.js
-|       |-- pdf.js
-|       `-- supabase.js
-|-- src/
-|   |-- App.jsx
-|   |-- main.jsx
-|   `-- styles.css
-|-- .env.example
-|-- index.html
-|-- package.json
-|-- package-lock.json
-|-- README.md
-`-- README.es.md
+|-- scripts/
+|-- supabase/
+|-- package.json                # raiz con npm workspaces
+`-- tsconfig.base.json
 ```
 
-## Responsabilidades del Frontend
+## Separacion de runtimes
 
-- Recibir texto y PDFs para entrenamiento
-- Enviar payloads de entrenamiento al backend
-- Enviar preguntas del usuario
-- Renderizar respuestas crudas orientadas a desarrollo
+- `apps/web`: runtime deployable para usuarios.
+- `apps/train`: runtime local-only para entrenamiento.
+- La logica compartida se debe mover progresivamente a `packages/*` para eliminar duplicados.
 
-## Responsabilidades del Backend
+## Estado actual de migracion
 
-- Recibir requests de entrenamiento y consulta
-- Extraer texto desde archivos PDF
-- Fragmentar contenido en chunks
-- Generar embeddings con Gemini
-- Insertar vectores en Supabase
-- Consultar fragmentos relevantes desde Supabase
-- Generar respuestas finales
-
-## Almacenamiento Recomendado de Workflows Historicos
-
-Aunque la aplicacion ya no use `n8n` en runtime, conviene commitear los workflows viejos como referencia historica.
-
-Estructura recomendada:
-
-```text
-workflows/
-|-- v1/
-|   |-- workflow.json
-|   `-- notes.md
-`-- v2/
-    |-- workflow.json
-    `-- notes.md
-```
-
-## Plan de Commits Sugerido
-
-1. Commit de documentacion y estructura actual de la app.
-2. Commit de `workflows/v1` como baseline original.
-3. Commit de `workflows/v2` como ultimo workflow antes de la migracion al backend.
-4. Continuar mejoras de backend y UI desde esa base.
+- Estructura fisica migrada a workspaces.
+- Scripts raiz orquestan `web` y `train`.
+- `.agent/` inicializado con contexto, playbook, herramientas, skills y log de errores.
+- Siguiente paso: extraer logica de `apps/web/lib` y `apps/train/api` hacia `packages/core` + `packages/data`.

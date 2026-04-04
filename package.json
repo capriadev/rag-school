@@ -3,14 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/train",
+    "packages/core",
+    "packages/data",
+    "packages/contracts",
+    "packages/ui",
+    "packages/config"
+  ],
   "scripts": {
-    "clean": "node scripts/clean-dev-cache.mjs",
-    "dev": "node scripts/dev-server.mjs",
-    "train": "tsx --watch train/index.ts",
-    "prebuild": "node scripts/clean-dev-cache.mjs",
-    "build": "next build",
-    "start": "next start",
-    "models": "node list-models.mjs"
+    "clean": "npm run clean -w @rag/web",
+    "dev": "npm run dev -w @rag/web",
+    "train": "npm run dev -w @rag/train",
+    "prebuild": "npm run clean -w @rag/web",
+    "build": "npm run build -w @rag/web",
+    "start": "npm run start -w @rag/web",
+    "models": "node list-models.mjs",
+    "dev:web": "npm run dev -w @rag/web",
+    "dev:train": "npm run dev -w @rag/train"
   },
   "dependencies": {
     "@google/genai": "^1.46.0",

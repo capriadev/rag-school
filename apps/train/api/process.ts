@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
     }
 
     // Buscar archivo
-    const UPLOAD_DIR = path.join(process.cwd(), "train", "uploads")
+    const UPLOAD_DIR = path.join(process.cwd(), "uploads")
     const files = await fs.readdir(UPLOAD_DIR)
     const matchingFile = files.find(f => f.includes(fileId))
 

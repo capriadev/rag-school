@@ -1,70 +1,42 @@
 # Project Structure
 
-This document describes the current repository layout after moving the core logic out of `n8n` and into application code.
-
-## Current Repository Layout
+Current repo layout after modular migration bootstrap:
 
 ```text
 rag-school/
+|-- apps/
+|   |-- web/                    # Next.js runtime (chat/query)
+|   |   |-- app/
+|   |   |-- components/
+|   |   |-- lib/
+|   |   `-- public/
+|   `-- train/                  # Local training runtime (Express + admin UI)
+|       |-- api/
+|       |-- admin.html
+|       `-- index.ts
+|-- packages/
+|   |-- core/                   # shared domain services (bootstrap)
+|   |-- data/                   # shared data layer (bootstrap)
+|   |-- contracts/              # shared API contracts/error envelope
+|   |-- ui/                     # shared design tokens/components (bootstrap)
+|   `-- config/                 # shared config package placeholder
+|-- .agent/                     # agent operational context and logs
 |-- docs/
-|   |-- PROJECT_STRUCTURE.md
-|   `-- PROJECT_STRUCTURE.es.md
-|-- server/
-|   |-- config.js
-|   |-- index.js
-|   `-- services/
-|       |-- chunking.js
-|       |-- gemini.js
-|       |-- pdf.js
-|       `-- supabase.js
-|-- src/
-|   |-- App.jsx
-|   |-- main.jsx
-|   `-- styles.css
-|-- .env.example
-|-- index.html
-|-- package.json
-|-- package-lock.json
-|-- README.md
-`-- README.es.md
+|-- scripts/
+|-- supabase/
+|-- package.json                # npm workspaces root
+`-- tsconfig.base.json
 ```
 
-## Frontend Responsibilities
+## Runtime Split
 
-- Collect text and PDF files for training
-- Submit training payloads to the backend
-- Submit user questions
-- Render development-oriented raw responses
+- `apps/web`: deployable web runtime.
+- `apps/train`: local-only training runtime.
+- Shared logic should progressively move to `packages/*` to remove duplication.
 
-## Backend Responsibilities
+## Current Migration Status
 
-- Receive training and query requests
-- Extract text from PDF files
-- Split content into chunks
-- Generate embeddings with Gemini
-- Insert vectors into Supabase
-- Query relevant chunks from Supabase
-- Generate final answers
-
-## Recommended Historical Workflow Storage
-
-Even though the app is no longer using `n8n` at runtime, the old workflows should still be committed as historical references.
-
-Recommended layout:
-
-```text
-workflows/
-|-- v1/
-|   |-- workflow.json
-|   `-- notes.md
-`-- v2/
-    |-- workflow.json
-    `-- notes.md
-```
-
-## Suggested Commit Plan
-
-1. Commit documentation and current app structure.
-2. Commit `workflows/v1` as the original workflow baseline.
-3. Commit `workflows/v2` as the latest workflow before backend migration.
-4. Continue backend and UI improvements from there.
+- Physical structure migrated to monorepo workspaces.
+- Root scripts orchestrate web/train through workspace commands.
+- `.agent/` initialized with context, playbook, tools, skills catalog, and error log.
+- Next steps: continue extracting domain logic from `apps/web/lib` and `apps/train/api` into `packages/core` + `packages/data`.

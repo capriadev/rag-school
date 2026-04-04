@@ -7,7 +7,7 @@ import { existsSync } from "fs"
 const router = Router()
 
 // Asegurar que existe el directorio de uploads
-const UPLOAD_DIR = path.join(process.cwd(), "train", "uploads")
+const UPLOAD_DIR = path.join(process.cwd(), "uploads")
 if (!existsSync(UPLOAD_DIR)) {
   await fs.mkdir(UPLOAD_DIR, { recursive: true })
 }

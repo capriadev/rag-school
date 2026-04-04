@@ -12,8 +12,8 @@ import {
   countProfileDocuments,
   type Profile,
   type CreateProfileInput,
-} from "../../lib/server/profiles.js"
-import { getSupabaseClient } from "../../lib/server/supabase.js"
+} from "../../web/lib/server/profiles.js"
+import { getSupabaseClient } from "../../web/lib/server/supabase.js"
 
 export interface InsertDocumentInput {
   id_profile: number

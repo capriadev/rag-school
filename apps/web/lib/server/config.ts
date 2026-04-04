@@ -1,6 +1,9 @@
 import dotenv from "dotenv"
+import path from "node:path"
 
-dotenv.config()
+// Workspace-first, then monorepo root fallback.
+dotenv.config({ path: path.resolve(process.cwd(), ".env") })
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false })
 
 function getEnv(name: string): string {
   return process.env[name]?.trim() || ""
