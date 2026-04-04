@@ -295,11 +295,22 @@ Puede ser:
     
     // Cargar perfiles desde el backend de entrenamiento
     async function loadProfiles() {
+      const select = document.getElementById('profileSelect');
+      select.innerHTML = '<option value="">Cargando...</option>';
+      
       try {
         const response = await fetch(API_URL + '/api/profiles');
+        
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Respuesta no JSON:', text.substring(0, 200));
+          throw new Error('El servidor no respondió con JSON. ¿Está corriendo el backend?');
+        }
+        
         const data = await response.json();
         
-        const select = document.getElementById('profileSelect');
         if (data.success && data.profiles) {
           if (data.profiles.length === 0) {
             select.innerHTML = '<option value="">No hay perfiles - crea uno nuevo</option>';
@@ -309,11 +320,11 @@ Puede ser:
             ).join('');
           }
         } else {
-          select.innerHTML = '<option value="">Error cargando perfiles</option>';
+          select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta inválida') + '</option>';
         }
       } catch (error) {
-        document.getElementById('profileSelect').innerHTML = 
-          '<option value="">Error: ' + error.message + '</option>';
+        console.error('Error cargando perfiles:', error);
+        select.innerHTML = '<option value="">Error: ' + error.message + '</option>';
       }
     }
     
@@ -336,6 +347,14 @@ Puede ser:
           body: JSON.stringify({ name: name, description: desc })
         });
         
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Respuesta no JSON:', text.substring(0, 500));
+          throw new Error('El servidor no respondió con JSON. ¿Está corriendo npm run train?');
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -344,9 +363,10 @@ Puede ser:
           document.getElementById('newProfileDesc').value = '';
           loadProfiles(); // Recargar lista
         } else {
-          showStatus('Error: ' + data.error, 'error', 'createStatus');
+          showStatus('Error: ' + (data.error || 'Error desconocido'), 'error', 'createStatus');
         }
       } catch (error) {
+        console.error('Error creando perfil:', error);
         showStatus('Error: ' + error.message, 'error', 'createStatus');
       }
     }

@@ -13,16 +13,22 @@ dotenv.config({ path: path.join(process.cwd(), ".env") })
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
-}
+let supabase: ReturnType<typeof createClient> | null = null
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-})
+function getSupabase() {
+  if (!supabase) {
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env file")
+    }
+    supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+  }
+  return supabase
+}
 
 // Types
 export interface Profile {
@@ -54,7 +60,7 @@ function toPgVector(values: number[]): string {
  * Create a new profile
  */
 export async function createProfile(input: CreateProfileInput): Promise<Profile> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("profiles")
     .insert({
       name: input.name,
@@ -79,7 +85,7 @@ export async function createProfile(input: CreateProfileInput): Promise<Profile>
  * Get all active profiles
  */
 export async function getProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("profiles")
     .select("id_profile, name, description, active, doc_count, f_created")
     .eq("active", true)
@@ -96,7 +102,7 @@ export async function getProfiles(): Promise<Profile[]> {
  * Get profile by ID
  */
 export async function getProfileById(id: number): Promise<Profile | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("profiles")
     .select("*")
     .eq("id_profile", id)
@@ -124,7 +130,7 @@ export async function insertDocuments(documents: InsertDocumentInput[]): Promise
     embedding: toPgVector(doc.embedding),
   }))
 
-  const { error } = await supabase.from("documents").insert(payload)
+  const { error } = await getSupabase().from("documents").insert(payload)
 
   if (error) {
     throw new Error(`Error insertando documentos: ${error.message}`)
@@ -137,7 +143,7 @@ export async function insertDocuments(documents: InsertDocumentInput[]): Promise
  * Delete profile and all its documents (cascade)
  */
 export async function deleteProfile(id: number): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("profiles")
     .delete()
     .eq("id_profile", id)
@@ -154,7 +160,7 @@ export async function updateProfile(
   id: number,
   updates: Partial<Pick<Profile, "name" | "description" | "active">>
 ): Promise<Profile> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("profiles")
     .update(updates)
     .eq("id_profile", id)
@@ -172,7 +178,7 @@ export async function updateProfile(
  * Get document count for a profile
  */
 export async function getProfileDocCount(profileId: number): Promise<number> {
-  const { count, error } = await supabase
+  const { count, error } = await getSupabase()
     .from("documents")
     .select("*", { count: "exact", head: true })
     .eq("id_profile", profileId)
@@ -184,4 +190,4 @@ export async function getProfileDocCount(profileId: number): Promise<number> {
   return count || 0
 }
 
-export { supabase }
+export { getSupabase }
