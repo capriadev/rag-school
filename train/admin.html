@@ -133,24 +133,106 @@
       color: #8e8ea9;
     }
     
-    .source-toggle {
+    .profile-item {
       display: flex;
-      gap: 0.5rem;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: #0a0a0f;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .profile-item:hover { background: #1a1a24; }
+    .profile-item.active { border: 1px solid #5b4cff; }
+    .profile-info { flex: 1; }
+    .profile-name { font-weight: 500; color: #ececf7; }
+    .profile-desc { font-size: 0.75rem; color: #8e8ea9; }
+    .profile-actions { display: flex; gap: 0.5rem; }
+    .profile-actions button {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+    }
+    .btn-small {
+      padding: 0.25rem 0.75rem !important;
+      font-size: 0.75rem !important;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #2a2a3a;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .toggle-slider { background-color: #00e5b0; }
+    input:checked + .toggle-slider:before { transform: translateX(20px); }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #111118;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1rem;
     }
-    .source-btn {
-      flex: 1;
-      padding: 0.5rem;
-      background: #1a1a24;
-      border: 1px solid #2a2a3a;
-      border-radius: 6px;
+    .modal-close {
+      background: none;
+      border: none;
+      color: #8e8ea9;
+      font-size: 1.5rem;
       cursor: pointer;
-      text-align: center;
+      padding: 0;
     }
-    .source-btn.active {
-      border-color: #5b4cff;
-      background: rgba(91, 76, 255, 0.1);
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
     }
+    .btn-group button { flex: 1; }
   </style>
 </head>
 <body>
@@ -158,46 +240,70 @@
     <h1>RAG <span>Custom</span></h1>
     <p class="subtitle">Panel de Administración - Entrenamiento Local</p>
     
-    <!-- Configuración de fuente de perfiles -->
+    <!-- Gestión de Perfiles -->
     <div class="card">
-      <h3 style="margin-bottom: 1rem;">Fuente de Perfiles</h3>
-      <div class="source-toggle">
-        <div class="source-btn active" id="btnLocal" onclick="setProfileSource('local')">
-          <strong>Localhost</strong><br>
-          <small>http://localhost:3000</small>
-        </div>
-        <div class="source-btn" id="btnVercel" onclick="setProfileSource('vercel')">
-          <strong>Vercel</strong><br>
-          <small>ragcustom.vercel.app</small>
-        </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Perfiles RAG</h3>
+        <button class="secondary btn-small" onclick="openCreateModal()">+ Nuevo Perfil</button>
       </div>
-      <div class="form-group">
-        <label>URL de API de Perfiles (editable)</label>
-        <input type="text" id="profileApiUrl" value="http://localhost:3000/api/profiles">
-      </div>
-      <button onclick="loadProfiles()" style="margin-bottom: 1rem;">Recargar Perfiles</button>
       
-      <div class="form-group">
-        <label>Perfil RAG Seleccionado</label>
+      <div id="profilesList">
+        <p style="color: #8e8ea9; text-align: center;">Cargando perfiles...</p>
+      </div>
+      
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>Perfil seleccionado para entrenar</label>
         <select id="profileSelect">
-          <option value="">Cargando perfiles...</option>
+          <option value="">Selecciona un perfil...</option>
         </select>
       </div>
     </div>
 
-    <!-- Crear nuevo perfil -->
-    <div class="card">
-      <h3 style="margin-bottom: 1rem;">Crear Nuevo Perfil</h3>
-      <div class="form-group">
-        <label>Nombre del Perfil</label>
-        <input type="text" id="newProfileName" placeholder="Ej: Escuela, Civil, Legal...">
+    <!-- Modal: Crear Perfil -->
+    <div id="createModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Crear Nuevo Perfil</h3>
+          <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+        </div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="newProfileName" placeholder="Ej: Escuela, Civil, Legal...">
+        </div>
+        <div class="form-group">
+          <label>Descripción (opcional)</label>
+          <input type="text" id="newProfileDesc" placeholder="Descripción del perfil...">
+        </div>
+        <div class="btn-group">
+          <button class="secondary" onclick="closeCreateModal()">Cancelar</button>
+          <button onclick="createProfile()">Crear</button>
+        </div>
+        <div id="createStatus" class="status info" style="display: none; margin-top: 1rem;"></div>
       </div>
-      <div class="form-group">
-        <label>Descripción (opcional)</label>
-        <input type="text" id="newProfileDesc" placeholder="Descripción del perfil...">
+    </div>
+
+    <!-- Modal: Editar Perfil -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Editar Perfil</h3>
+          <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <input type="hidden" id="editProfileId">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="editProfileName">
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <input type="text" id="editProfileDesc">
+        </div>
+        <div class="btn-group">
+          <button class="secondary" onclick="closeEditModal()">Cancelar</button>
+          <button onclick="saveProfile()">Guardar</button>
+        </div>
+        <div id="editStatus" class="status info" style="display: none; margin-top: 1rem;"></div>
       </div>
-      <button onclick="createProfile()">Crear Perfil</button>
-      <div id="createStatus" class="status info" style="display: none;"></div>
     </div>
     
     <!-- Entrenamiento -->
@@ -266,22 +372,27 @@ Puede ser:
 
   <script>
     const API_URL = 'http://localhost:3001';
-    let currentProfileSource = 'local';
+    let allProfiles = [];
     
-    // URLs predefinidas - ahora usa el backend de entrenamiento directamente
-    const PROFILE_URLS = {
-      train: API_URL + '/api/profiles',
-      local: 'http://localhost:3000/api/profiles',
-      vercel: 'https://ragcustom.vercel.app/api/profiles'
-    };
-    
-    // Cambiar fuente de perfiles
-    function setProfileSource(source) {
-      currentProfileSource = source;
-      document.getElementById('btnLocal').classList.toggle('active', source === 'local');
-      document.getElementById('btnVercel').classList.toggle('active', source === 'vercel');
-      document.getElementById('profileApiUrl').value = PROFILE_URLS[source];
-      loadProfiles();
+    // Modal functions
+    function openCreateModal() {
+      document.getElementById('createModal').classList.add('active');
+      document.getElementById('createStatus').style.display = 'none';
+      document.getElementById('newProfileName').value = '';
+      document.getElementById('newProfileDesc').value = '';
+    }
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.remove('active');
+    }
+    function openEditModal(profile) {
+      document.getElementById('editProfileId').value = profile.id_profile;
+      document.getElementById('editProfileName').value = profile.name;
+      document.getElementById('editProfileDesc').value = profile.description || '';
+      document.getElementById('editStatus').style.display = 'none';
+      document.getElementById('editModal').classList.add('active');
+    }
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
     }
     
     // Cambiar tabs
@@ -293,15 +404,17 @@ Puede ser:
       document.getElementById('tab-' + tab).classList.add('active');
     }
     
-    // Cargar perfiles desde el backend de entrenamiento
+    // Cargar perfiles y mostrar lista
     async function loadProfiles() {
       const select = document.getElementById('profileSelect');
+      const list = document.getElementById('profilesList');
+      
       select.innerHTML = '<option value="">Cargando...</option>';
+      list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">Cargando perfiles...</p>';
       
       try {
         const response = await fetch(API_URL + '/api/profiles');
         
-        // Verificar si la respuesta es JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
           const text = await response.text();
@@ -312,23 +425,77 @@ Puede ser:
         const data = await response.json();
         
         if (data.success && data.profiles) {
+          allProfiles = data.profiles;
+          
+          // Actualizar select
           if (data.profiles.length === 0) {
             select.innerHTML = '<option value="">No hay perfiles - crea uno nuevo</option>';
+            list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No hay perfiles. Crea uno nuevo para comenzar.</p>';
           } else {
             select.innerHTML = data.profiles.map(p => 
-              '<option value="' + p.id_profile + '">' + p.name + (p.description ? ' - ' + p.description : '') + '</option>'
+              '<option value="' + p.id_profile + '">' + p.name + '</option>'
             ).join('');
+            
+            // Renderizar lista de perfiles
+            list.innerHTML = data.profiles.map(p => renderProfileItem(p)).join('');
           }
         } else {
           select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta inválida') + '</option>';
+          list.innerHTML = '<p style="color: #ff4c6b; text-align: center;">Error cargando perfiles</p>';
         }
       } catch (error) {
         console.error('Error cargando perfiles:', error);
         select.innerHTML = '<option value="">Error: ' + error.message + '</option>';
+        list.innerHTML = '<p style="color: #ff4c6b; text-align: center;">Error: ' + error.message + '</p>';
       }
     }
     
-    // Crear perfil - ahora conectado a Supabase via training backend
+    function renderProfileItem(p) {
+      return '<div class="profile-item" id="profile-' + p.id_profile + '">' +
+        '<div class="profile-info">' +
+          '<div class="profile-name">' + p.name + (p.doc_count > 0 ? ' (' + p.doc_count + ' docs)' : '') + '</div>' +
+          '<div class="profile-desc">' + (p.description || 'Sin descripción') + '</div>' +
+        '</div>' +
+        '<div class="profile-actions">' +
+          '<label class="toggle-switch" title="Activar/Desactivar">' +
+            '<input type="checkbox" ' + (p.active ? 'checked' : '') + ' onchange="toggleProfile(' + p.id_profile + ', this.checked)">' +
+            '<span class="toggle-slider"></span>' +
+          '</label>' +
+          '<button class="btn-small secondary" onclick="openEditModalById(' + p.id_profile + ')">Editar</button>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    function openEditModalById(id) {
+      const profile = allProfiles.find(p => p.id_profile === id);
+      if (profile) openEditModal(profile);
+    }
+    
+    // Toggle profile active state
+    async function toggleProfile(id, active) {
+      try {
+        const response = await fetch(API_URL + '/api/profiles/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: active })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Error al actualizar');
+        }
+        
+        // Recargar para actualizar la lista
+        loadProfiles();
+      } catch (error) {
+        console.error('Error toggling profile:', error);
+        alert('Error: ' + error.message);
+        loadProfiles(); // Reset to correct state
+      }
+    }
+    
+    // Crear perfil
     async function createProfile() {
       const name = document.getElementById('newProfileName').value.trim();
       const desc = document.getElementById('newProfileDesc').value.trim();
@@ -338,7 +505,7 @@ Puede ser:
         return;
       }
       
-      showStatus('Creando perfil en Supabase...', 'info', 'createStatus');
+      showStatus('Creando perfil...', 'info', 'createStatus');
       
       try {
         const response = await fetch(API_URL + '/api/profiles', {
@@ -347,21 +514,14 @@ Puede ser:
           body: JSON.stringify({ name: name, description: desc })
         });
         
-        // Verificar si la respuesta es JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Respuesta no JSON:', text.substring(0, 500));
-          throw new Error('El servidor no respondió con JSON. ¿Está corriendo npm run train?');
-        }
-        
         const data = await response.json();
         
         if (data.success) {
-          showStatus('Perfil "' + data.profile.name + '" creado exitosamente (ID: ' + data.profile.id_profile + ')', 'success', 'createStatus');
-          document.getElementById('newProfileName').value = '';
-          document.getElementById('newProfileDesc').value = '';
-          loadProfiles(); // Recargar lista
+          showStatus('Perfil "' + data.profile.name + '" creado exitosamente', 'success', 'createStatus');
+          setTimeout(() => {
+            closeCreateModal();
+            loadProfiles();
+          }, 1000);
         } else {
           showStatus('Error: ' + (data.error || 'Error desconocido'), 'error', 'createStatus');
         }
@@ -370,6 +530,52 @@ Puede ser:
         showStatus('Error: ' + error.message, 'error', 'createStatus');
       }
     }
+    
+    // Guardar perfil editado
+    async function saveProfile() {
+      const id = parseInt(document.getElementById('editProfileId').value);
+      const name = document.getElementById('editProfileName').value.trim();
+      const desc = document.getElementById('editProfileDesc').value.trim();
+      
+      if (!name) {
+        showStatus('El nombre es requerido', 'error', 'editStatus');
+        return;
+      }
+      
+      showStatus('Guardando cambios...', 'info', 'editStatus');
+      
+      try {
+        const response = await fetch(API_URL + '/api/profiles/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, description: desc })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showStatus('Perfil actualizado exitosamente', 'success', 'editStatus');
+          setTimeout(() => {
+            closeEditModal();
+            loadProfiles();
+          }, 1000);
+        } else {
+          showStatus('Error: ' + (data.error || 'Error desconocido'), 'error', 'editStatus');
+        }
+      } catch (error) {
+        console.error('Error guardando perfil:', error);
+        showStatus('Error: ' + error.message, 'error', 'editStatus');
+      }
+    }
+    
+    // Cerrar modales al hacer click fuera
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+      }
+    }
+    
+    // Resto de funciones...
     
     // Subir archivos
     async function uploadFiles() {
