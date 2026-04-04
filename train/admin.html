@@ -30,12 +30,23 @@
     label { display: block; font-size: 0.875rem; color: #8e8ea9; margin-bottom: 0.5rem; }
     select, input[type="text"], textarea {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.75rem 2.5rem 0.75rem 0.75rem;
       background: #0a0a0f;
       border: 1px solid #2a2a3a;
       border-radius: 8px;
       color: #ececf7;
       font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%238e8ea9' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 12px;
+      cursor: pointer;
+    }
+    select:hover {
+      border-color: #5b4cff;
     }
     textarea {
       min-height: 200px;
@@ -254,6 +265,7 @@
       padding: 1.5rem;
       max-width: 400px;
       width: 90%;
+      position: relative;
     }
     .modal-header {
       display: flex;
@@ -262,12 +274,24 @@
       margin-bottom: 1rem;
     }
     .modal-close {
-      background: none;
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: transparent;
       border: none;
       color: #8e8ea9;
       font-size: 1.5rem;
       cursor: pointer;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 0;
+    }
+    .modal-close:hover {
+      color: #ececf7;
+      background: transparent;
     }
     .pagination {
       display: flex;
@@ -480,12 +504,13 @@
           <label>Texto para entrenar</label>
           <textarea id="textInput" placeholder="Pega aquí el texto que quieres agregar al RAG...
 
-Puede ser:
-- Documentación
-- Notas
-- Transcripciones
-- Código
-- Cualquier texto plano"></textarea>
+            Puede ser:
+            - Documentación
+            - Notas
+            - Transcripciones
+            - Código
+            - Cualquier texto plano">
+          </textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
           <button class="secondary btn-small" onclick="uploadText()">Procesar Texto</button>
