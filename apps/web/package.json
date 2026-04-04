@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@rag/core": "0.1.0",
+    "@rag/data": "0.1.0",
+    "@rag/contracts": "0.1.0",
+    "@rag/ui": "0.1.0"
+  },
   "scripts": {
     "clean": "node ../../scripts/clean-dev-cache.mjs",
     "dev": "node ../../scripts/dev-server.mjs",

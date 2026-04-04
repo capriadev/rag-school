@@ -12,8 +12,8 @@ import {
   countProfileDocuments,
   type Profile,
   type CreateProfileInput,
-} from "../../web/lib/server/profiles.js"
-import { getSupabaseClient } from "../../web/lib/server/supabase.js"
+} from "@rag/core"
+import { getSupabaseClient } from "@rag/data"
 
 export interface InsertDocumentInput {
   id_profile: number

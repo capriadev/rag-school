@@ -1,1 +1,1 @@
-export {}
+export { getSupabaseClient } from "./supabase-client"

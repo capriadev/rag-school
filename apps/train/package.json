@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@rag/core": "0.1.0",
+    "@rag/data": "0.1.0"
+  },
   "scripts": {
     "dev": "tsx --watch index.ts",
     "start": "tsx index.ts"
