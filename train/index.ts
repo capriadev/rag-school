@@ -52,13 +52,13 @@ app.get("/api/status", (req, res) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║  RAG Custom - Training Backend                               ║
-║  Modo: LOCAL ONLY (no deployar a Vercel)                     ║
-╠══════════════════════════════════════════════════════════════╣
-║  URL: http://localhost:${PORT}                                ║
-║  Health: http://localhost:${PORT}/health                      ║
-╚══════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════╗
+║  RAG Custom - Training Backend                     ║
+║  Modo: LOCAL ONLY (no deployar a Vercel)           ║
+╠════════════════════════════════════════════════════╣
+║  URL: http://localhost:${PORT}                        ║
+║  Health: http://localhost:${PORT}/health              ║
+╚════════════════════════════════════════════════════╝
   `)
 })
 

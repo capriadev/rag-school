@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "node scripts/clean-dev-cache.mjs",
     "dev": "node scripts/dev-server.mjs",
-    "train": "tsx train/index.ts",
+    "train": "tsx --watch train/index.ts",
     "prebuild": "node scripts/clean-dev-cache.mjs",
     "build": "next build",
     "start": "next start",

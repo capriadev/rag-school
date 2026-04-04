@@ -82,13 +82,12 @@ export async function createProfile(input: CreateProfileInput): Promise<Profile>
 }
 
 /**
- * Get all active profiles
+ * Get all profiles (active and inactive)
  */
 export async function getProfiles(): Promise<Profile[]> {
   const { data, error } = await getSupabase()
     .from("profiles")
     .select("id_profile, name, description, active, doc_count, f_created")
-    .eq("active", true)
     .order("name")
 
   if (error) {

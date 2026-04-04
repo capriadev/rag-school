@@ -543,13 +543,12 @@ Puede ser:
           // Mostrar buscador si hay +20 perfiles
           document.getElementById('searchContainer').style.display = allProfiles.length > 20 ? 'block' : 'none';
           
-          // Actualizar select - solo perfiles activos
-          const activeProfiles = allProfiles.filter(p => p.active);
-          if (activeProfiles.length === 0) {
-            select.innerHTML = '<option value="">No hay perfiles activos</option>';
+          // Actualizar select - todos los perfiles (activos e inactivos)
+          if (allProfiles.length === 0) {
+            select.innerHTML = '<option value="">No hay perfiles</option>';
           } else {
-            select.innerHTML = activeProfiles.map(p => 
-              '<option value="' + p.id_profile + '">' + p.name + '</option>'
+            select.innerHTML = allProfiles.map(p => 
+              '<option value="' + p.id_profile + '">' + p.name + (p.active ? '' : ' (Inactivo)') + '</option>'
             ).join('');
           }
           
