@@ -44,7 +44,7 @@ train/
 
 ```env
 TRAIN_PORT=3001                    # Puerto del servidor
-N8N_WEBHOOK_URL=http://localhost:5678/webhook/entrenar
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/train
 ```
 
 ## Flujo de Uso

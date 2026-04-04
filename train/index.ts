@@ -44,7 +44,7 @@ app.get("/health", (req, res) => {
 app.get("/api/status", (req, res) => {
   res.json({
     status: "ready",
-    n8nWebhook: process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/entrenar",
+    n8nWebhook: process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/train",
     uploadPath: path.join(process.cwd(), "train", "uploads"),
   })
 })

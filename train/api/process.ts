@@ -105,7 +105,7 @@ router.get("/jobs", (req, res) => {
 
 // Función para enviar a n8n webhook y guardar en DB
 async function sendToN8N(job: any, filename: string) {
-  const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/entrenar"
+  const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/train"
   
   try {
     job.status = "processing"
