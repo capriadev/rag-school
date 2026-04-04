@@ -204,12 +204,45 @@
       cursor: pointer;
       padding: 0;
     }
-    .btn-group {
+    .pagination {
       display: flex;
-      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      gap: 0.25rem;
       margin-top: 1rem;
+      flex-wrap: wrap;
     }
-    .btn-group button { flex: 1; }
+    .pagination button {
+      padding: 0.375rem 0.625rem;
+      font-size: 0.875rem;
+      min-width: 32px;
+    }
+    .pagination button.active {
+      background: #5b4cff;
+      color: white;
+    }
+    .pagination button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .pagination .ellipsis {
+      color: #8e8ea9;
+      padding: 0.375rem 0.5rem;
+    }
+    .search-box {
+      width: 100%;
+      padding: 0.75rem;
+      background: #0a0a0f;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      color: #ececf7;
+      margin-bottom: 1rem;
+      font-family: inherit;
+    }
+    .search-box:focus {
+      outline: none;
+      border-color: #5b4cff;
+    }
   </style>
 </head>
 <body>
@@ -224,9 +257,17 @@
         <button class="secondary btn-small" onclick="openCreateModal()">+ Nuevo Perfil</button>
       </div>
       
+      <!-- Buscador (aparece cuando hay +20 perfiles) -->
+      <div id="searchContainer" style="display: none;">
+        <input type="text" id="profileSearch" class="search-box" placeholder="Buscar perfil por nombre..." oninput="filterProfiles()">
+      </div>
+      
       <div id="profilesList">
         <p style="color: #8e8ea9; text-align: center;">Cargando perfiles...</p>
       </div>
+      
+      <!-- Paginación -->
+      <div id="pagination" class="pagination" style="display: none;"></div>
       
       <div class="form-group" style="margin-top: 1rem;">
         <label>Perfil seleccionado para entrenar</label>
@@ -358,6 +399,9 @@ Puede ser:
   <script>
     const API_URL = 'http://localhost:3001';
     let allProfiles = [];
+    let filteredProfiles = [];
+    let currentPage = 1;
+    const PROFILES_PER_PAGE = 10;
     
     // Modal functions
     function openCreateModal() {
@@ -433,18 +477,23 @@ Puede ser:
         
         if (data.success && data.profiles) {
           allProfiles = data.profiles;
+          filteredProfiles = allProfiles;
+          
+          // Mostrar buscador si hay +20 perfiles
+          document.getElementById('searchContainer').style.display = allProfiles.length > 20 ? 'block' : 'none';
           
           // Actualizar select
           if (data.profiles.length === 0) {
             select.innerHTML = '<option value="">No hay perfiles - crea uno nuevo</option>';
             list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No hay perfiles. Crea uno nuevo para comenzar.</p>';
+            document.getElementById('pagination').style.display = 'none';
           } else {
             select.innerHTML = data.profiles.map(p => 
               '<option value="' + p.id_profile + '">' + p.name + '</option>'
             ).join('');
             
-            // Renderizar lista de perfiles
-            list.innerHTML = data.profiles.map(p => renderProfileItem(p)).join('');
+            // Renderizar lista paginada
+            renderProfiles();
           }
         } else {
           select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta inválida') + '</option>';
@@ -455,6 +504,93 @@ Puede ser:
         select.innerHTML = '<option value="">Error: ' + error.message + '</option>';
         list.innerHTML = '<p style="color: #ff4c6b; text-align: center;">Error: ' + error.message + '</p>';
       }
+    }
+    
+    // Filtrar perfiles por búsqueda
+    function filterProfiles() {
+      const query = document.getElementById('profileSearch').value.toLowerCase().trim();
+      if (query === '') {
+        filteredProfiles = allProfiles;
+      } else {
+        filteredProfiles = allProfiles.filter(p => 
+          p.name.toLowerCase().includes(query) || 
+          (p.description && p.description.toLowerCase().includes(query))
+        );
+      }
+      currentPage = 1;
+      renderProfiles();
+    }
+    
+    // Renderizar perfiles de la página actual
+    function renderProfiles() {
+      const list = document.getElementById('profilesList');
+      const totalPages = Math.ceil(filteredProfiles.length / PROFILES_PER_PAGE);
+      
+      const start = (currentPage - 1) * PROFILES_PER_PAGE;
+      const end = start + PROFILES_PER_PAGE;
+      const pageProfiles = filteredProfiles.slice(start, end);
+      
+      if (pageProfiles.length === 0) {
+        list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">No se encontraron perfiles</p>';
+      } else {
+        list.innerHTML = pageProfiles.map(p => renderProfileItem(p)).join('');
+      }
+      
+      // Renderizar paginación si hay más de 10 perfiles
+      if (filteredProfiles.length > PROFILES_PER_PAGE) {
+        renderPagination(totalPages);
+        document.getElementById('pagination').style.display = 'flex';
+      } else {
+        document.getElementById('pagination').style.display = 'none';
+      }
+    }
+    
+    // Renderizar controles de paginación
+    function renderPagination(totalPages) {
+      const container = document.getElementById('pagination');
+      let html = '';
+      
+      // Botón << (primera página)
+      html += '<button ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(1)"><<</button>';
+      
+      // Botón < (anterior)
+      html += '<button ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage - 1) + ')"><</button>';
+      
+      // Números de página
+      const maxButtons = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+      
+      if (endPage - startPage < maxButtons - 1) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+      
+      if (startPage > 1) {
+        html += '<button onclick="goToPage(1)">1</button>';
+        if (startPage > 2) html += '<span class="ellipsis">...</span>';
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+      }
+      
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += '<span class="ellipsis">...</span>';
+        html += '<button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>';
+      }
+      
+      // Botón > (siguiente)
+      html += '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage + 1) + ')">></button>';
+      
+      // Botón >> (última página)
+      html += '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="goToPage(' + totalPages + ')">>></button>';
+      
+      container.innerHTML = html;
+    }
+    
+    function goToPage(page) {
+      currentPage = page;
+      renderProfiles();
     }
     
     function renderProfileItem(p) {
