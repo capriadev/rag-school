@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import "katex/dist/katex.min.css"
+import { useProfiles } from "../lib/client/use-profiles"
 
 const CHUNK_OPTIONS = [
   { value: 3, label: "Preciso" },
@@ -35,76 +36,11 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
-  const [profiles, setProfiles] = useState<Array<{ id_profile: number; name: string; description: string | null }>>([])
-  const [profilesLoading, setProfilesLoading] = useState(true)
-  const loadProfiles = useCallback(async () => {
-    setProfilesLoading(true)
-    try {
-      const response = await fetch(`/api/profiles?t=${Date.now()}`, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      })
-      const data = await response.json()
-      if (data.success && Array.isArray(data.profiles)) {
-        setProfiles(data.profiles)
-        return
-      }
-      setProfiles([])
-    } catch (error) {
-      console.error("Failed to load profiles:", error)
-      setProfiles([])
-    } finally {
-      setProfilesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (selectedProfile === "chat") return
-
-    const selectedId = Number(selectedProfile)
-    if (Number.isNaN(selectedId)) {
-      setSelectedProfile("chat")
-      return
-    }
-
-    const stillExists = profiles.some((p) => p.id_profile === selectedId)
-    if (!stillExists) {
-      setSelectedProfile("chat")
-    }
-  }, [profiles, selectedProfile])
+  const { profiles, profilesLoading, loadProfiles } = useProfiles(selectedProfile, setSelectedProfile)
 
   // Token tracking - dynamic based on mode (CHAT uses 64k for Gemma, RAG varies)
   const MAX_CONTEXT_TOKENS = selectedProfile === "chat" ? 64000 : 32000
   const [usedTokens, setUsedTokens] = useState(0)
-
-  // Load profiles from API on mount and when tab becomes visible/focused
-  useEffect(() => {
-    loadProfiles()
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadProfiles()
-      }
-    }
-    const handleFocus = () => {
-      loadProfiles()
-    }
-    const handlePageShow = () => {
-      loadProfiles()
-    }
-    
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    window.addEventListener("focus", handleFocus)
-    window.addEventListener("pageshow", handlePageShow)
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-      window.removeEventListener("focus", handleFocus)
-      window.removeEventListener("pageshow", handlePageShow)
-    }
-  }, [loadProfiles])
 
   // Rotate placeholder on mount
   useEffect(() => {

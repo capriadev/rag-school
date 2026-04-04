@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getProfiles } from "../../../lib/server/supabase"
+import { listActiveProfiles } from "../../../lib/server/profiles"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -8,7 +8,7 @@ export const fetchCache = "force-no-store"
 
 export async function GET() {
   try {
-    const profiles = await getProfiles()
+    const profiles = await listActiveProfiles()
 
     return NextResponse.json(
       {

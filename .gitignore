@@ -3,3 +3,5 @@ dist/
 build/
 .next/
 .env
+train/uploads/
+n8n/

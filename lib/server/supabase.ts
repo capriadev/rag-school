@@ -10,6 +10,10 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey,
   },
 })
 
+export function getSupabaseClient() {
+  return supabase
+}
+
 function toPgVector(values: number[]): string {
   return `[${values.join(",")}]`
 }
@@ -129,6 +133,7 @@ export async function getProfiles(): Promise<Array<{ id_profile: number; name: s
   const { data, error } = await supabase
     .from("profiles")
     .select("id_profile, name, description, active")
+    .eq("active", true)
     .order("name")
 
   if (error) {
