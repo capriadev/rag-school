@@ -31,16 +31,3 @@ export async function matchDocuments({
 
   return data || []
 }
-
-export async function pingVectorStore(): Promise<{ reachable: boolean; rowsChecked: number }> {
-  const { data, error } = await supabase.from(config.documentsTable).select("id_doc").limit(1)
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return {
-    reachable: true,
-    rowsChecked: data?.length || 0,
-  }
-}
