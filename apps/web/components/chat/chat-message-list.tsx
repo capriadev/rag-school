@@ -12,11 +12,11 @@ type ChatMessageListProps = {
 export function ChatMessageList({ messages }: ChatMessageListProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      {messages.map((msg, idx) => (
-        <div key={idx} className="flex gap-4">
+      {messages.map((message, index) => (
+        <div key={index} className="flex gap-4">
           <div className="flex-1">
-            <div className={`text-sm ${msg.role === "user" ? "font-semibold text-[#ececf7]" : "text-[#b4b4c6]"}`}>
-              {msg.role === "user" ? "TÃº" : "RAG Custom"}
+            <div className={`text-sm ${message.role === "user" ? "font-semibold text-[#ececf7]" : "text-[#b4b4c6]"}`}>
+              {message.role === "user" ? "Tu" : "RAG Custom"}
             </div>
             <div className="prose prose-invert prose-sm mt-1 max-w-none text-[15px] leading-7">
               <ReactMarkdown
@@ -37,7 +37,7 @@ export function ChatMessageList({ messages }: ChatMessageListProps) {
                   ),
                 }}
               >
-                {msg.content || (msg.role === "assistant" ? "â–Œ" : "")}
+                {message.content || (message.role === "assistant" ? "..." : "")}
               </ReactMarkdown>
             </div>
           </div>
