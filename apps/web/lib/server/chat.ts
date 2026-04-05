@@ -96,7 +96,6 @@ Reglas:
 
 export async function generateChatResponse(
   message: string,
-  context?: Array<{ role: "user" | "assistant"; content: string }>,
 ): Promise<string> {
   const apiKey = config.geminiApiKeys[0]
   if (!apiKey) {
@@ -164,7 +163,6 @@ export async function generateChatResponse(
 
 export async function* generateChatResponseStream(
   message: string,
-  context?: Array<{ role: "user" | "assistant"; content: string }>,
 ): AsyncGenerator<string, void, unknown> {
   const apiKey = config.geminiApiKeys[0]
   if (!apiKey) {

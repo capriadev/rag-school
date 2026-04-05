@@ -8,11 +8,9 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       message?: unknown
       stream?: boolean
-      context?: Array<{ role: "user" | "assistant"; content: string }>
     }
     const message = String(body.message || "").trim()
     const useStream = body.stream === true
-    const context = body.context || []
 
     if (!message) {
       return NextResponse.json(
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
 
     // Non-streaming response
     if (!useStream) {
-      const response = await generateChatResponse(message, context)
+      const response = await generateChatResponse(message)
       return NextResponse.json({
         success: true,
         response,
@@ -38,7 +36,7 @@ export async function POST(request: Request) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of generateChatResponseStream(message, context)) {
+          for await (const chunk of generateChatResponseStream(message)) {
             const data = `data: ${JSON.stringify({ chunk })}\n\n`
             controller.enqueue(encoder.encode(data))
           }

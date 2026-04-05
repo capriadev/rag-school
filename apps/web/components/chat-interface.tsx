@@ -60,12 +60,10 @@ export function ChatInterface() {
       try {
         setMessages((prev) => [...prev, { role: "assistant", content: "" }])
 
-        const context = messages.filter((m) => m.content.trim() !== "")
-
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: question, stream: true, context }),
+          body: JSON.stringify({ message: question, stream: true }),
         })
 
         if (!response.body) {
