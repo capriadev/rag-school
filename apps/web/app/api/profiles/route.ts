@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { listActiveProfiles } from "../../../lib/server/profiles"
+import { listActiveProfiles } from "@rag/core"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

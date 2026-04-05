@@ -12,7 +12,7 @@ const nextConfig = {
   transpilePackages: ["@rag/core", "@rag/data", "@rag/contracts", "@rag/ui"],
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals = [...(config.externals || []), "canvas", "pdf-parse", "pdfjs-dist"]
+      config.externals = [...(config.externals || []), "canvas", "pdfjs-dist"]
     }
     // Ignore train folder in webpack
     config.ignoreWarnings = [

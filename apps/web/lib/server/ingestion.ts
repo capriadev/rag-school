@@ -1,6 +1,5 @@
 import path from "node:path"
 import { extractSpreadsheetText, extractCsvText, extractPresentationText } from "./office"
-// import { extractPdfText } from "./pdf"
 import { extractMultimodalText } from "./multimodal"
 import type { SourceInput } from "../shared/types"
 
