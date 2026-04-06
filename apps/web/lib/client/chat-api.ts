@@ -1,4 +1,5 @@
 import type { ChatMessage } from "../../components/chat/types"
+import type { QueryResponseDto } from "@rag/contracts"
 
 export async function streamChatCompletion(
   message: string,
@@ -54,7 +55,7 @@ export async function queryRagAnswer(params: {
   chunkCount: number
   selectedProfile: string
   context: ChatMessage[]
-}): Promise<{ success: boolean; answer?: string; error?: string }> {
+}): Promise<QueryResponseDto> {
   const { question, chunkCount, selectedProfile, context } = params
 
   const response = await fetch("/api/query", {
@@ -68,5 +69,5 @@ export async function queryRagAnswer(params: {
     }),
   })
 
-  return response.json() as Promise<{ success: boolean; answer?: string; error?: string }>
+  return response.json() as Promise<QueryResponseDto>
 }

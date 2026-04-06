@@ -1,15 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-
-type ProfileOption = {
-  id_profile: number
-  name: string
-  description: string | null
-}
+import type { ProfileDto, ProfilesListResponse } from "@rag/contracts"
 
 export function useProfiles(selectedProfile: string, setSelectedProfile: (value: string) => void) {
-  const [profiles, setProfiles] = useState<ProfileOption[]>([])
+  const [profiles, setProfiles] = useState<ProfileDto[]>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
 
   const loadProfiles = useCallback(async () => {
@@ -22,7 +17,7 @@ export function useProfiles(selectedProfile: string, setSelectedProfile: (value:
           Pragma: "no-cache",
         },
       })
-      const data = await response.json()
+      const data = (await response.json()) as ProfilesListResponse
       if (data.success && Array.isArray(data.profiles)) {
         setProfiles(data.profiles)
         return
