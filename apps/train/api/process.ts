@@ -1,94 +1,79 @@
 import { Router } from "express"
-import path from "path"
-import fs from "fs/promises"
+import path from "node:path"
+import fs from "node:fs/promises"
 import { insertDocuments } from "./db.js"
+import { TRAIN_UPLOADS_DIR, getTrainWebhookUrl } from "../lib/config.js"
+import { createProcessJob, getProcessJob, listProcessJobs, touchProcessJob, type ProcessJob } from "../lib/process-jobs.js"
 
 const router = Router()
 
-// Job tracking simple (en memoria - se pierde al reiniciar)
-const jobs = new Map<string, {
-  id: string
-  status: "pending" | "processing" | "completed" | "failed"
-  filePath: string
-  profileId: string
-  result?: any
-  error?: string
-  createdAt: string
-  updatedAt: string
-}>()
+type N8NChunk = {
+  content?: string
+  text?: string
+  metadata?: Record<string, unknown>
+  embedding?: number[]
+}
 
-// POST /api/process - Enviar archivo a n8n para procesamiento
+type N8NResponse = {
+  chunks?: N8NChunk[]
+  [key: string]: unknown
+}
+
 router.post("/", async (req, res) => {
   try {
-    const { fileId, profileId } = req.body
+    const { fileId, profileId } = req.body as { fileId?: string; profileId?: string }
 
     if (!fileId || !profileId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Se requieren fileId y profileId",
-        example: { fileId: "123456789-nombre.pdf", profileId: "1" }
+        example: { fileId: "123456789-nombre.pdf", profileId: "1" },
       })
     }
 
-    // Buscar archivo
-    const UPLOAD_DIR = path.join(process.cwd(), "uploads")
-    const files = await fs.readdir(UPLOAD_DIR)
-    const matchingFile = files.find(f => f.includes(fileId))
+    const files = await fs.readdir(TRAIN_UPLOADS_DIR)
+    const matchingFile = files.find((file) => file.includes(fileId))
 
     if (!matchingFile) {
       return res.status(404).json({ error: `Archivo no encontrado: ${fileId}` })
     }
 
-    const filePath = path.join(UPLOAD_DIR, matchingFile)
-    const jobId = `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const filePath = path.join(TRAIN_UPLOADS_DIR, matchingFile)
+    const job = createProcessJob({ filePath, profileId })
 
-    // Crear job
-    const job = {
-      id: jobId,
-      status: "pending" as const,
-      filePath,
-      profileId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    jobs.set(jobId, job)
-
-    // Enviar a n8n webhook (async - no esperamos respuesta)
     try {
-      await sendToN8N(job, matchingFile)
+      await sendFileToN8N(job, matchingFile)
     } catch (error) {
-      console.error(`[PROCESS] Error enviando a n8n:`, error)
-      // El job ya está marcado como failed dentro de sendToN8N
+      console.error("[PROCESS] Error enviando a n8n:", error)
     }
 
-    console.log(`[PROCESS] Job ${jobId} creado para ${matchingFile} -> perfil ${profileId}`)
+    console.log(`[PROCESS] Job ${job.id} creado para ${matchingFile} -> perfil ${profileId}`)
 
-    res.json({
+    return res.json({
       success: true,
-      jobId,
+      jobId: job.id,
       status: "pending",
       message: "Archivo enviado a procesamiento",
-      checkStatus: `GET /api/process/status?jobId=${jobId}`,
+      checkStatus: `GET /api/process/status?jobId=${job.id}`,
     })
   } catch (error) {
     console.error("[PROCESS ERROR]", error)
-    res.status(500).json({ error: "Error al iniciar procesamiento" })
+    return res.status(500).json({ error: "Error al iniciar procesamiento" })
   }
 })
 
-// GET /api/process/status - Ver estado de un job
 router.get("/status", (req, res) => {
   const { jobId } = req.query
-  
+
   if (!jobId || typeof jobId !== "string") {
     return res.status(400).json({ error: "Se requiere jobId" })
   }
 
-  const job = jobs.get(jobId)
+  const job = getProcessJob(jobId)
   if (!job) {
     return res.status(404).json({ error: "Job no encontrado" })
   }
 
-  res.json({
+  return res.json({
     id: job.id,
     status: job.status,
     profileId: job.profileId,
@@ -99,73 +84,94 @@ router.get("/status", (req, res) => {
   })
 })
 
-// GET /api/process/jobs - Listar todos los jobs
 router.get("/jobs", (req, res) => {
-  const allJobs = Array.from(jobs.values())
-  res.json({
-    count: allJobs.length,
-    jobs: allJobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+  const jobs = listProcessJobs().sort((left, right) => {
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  })
+
+  return res.json({
+    count: jobs.length,
+    jobs,
   })
 })
 
-// POST /api/process/text - Procesar texto directo (sin archivo)
 router.post("/text", async (req, res) => {
   try {
-    const { text, profileId } = req.body
+    const { text, profileId } = req.body as { text?: string; profileId?: string }
 
     if (!text || !profileId) {
       return res.status(400).json({
         error: "Se requieren text y profileId",
-        example: { text: "contenido a procesar", profileId: "1" }
+        example: { text: "contenido a procesar", profileId: "1" },
       })
     }
 
-    const jobId = `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const job = createProcessJob({ filePath: "", profileId })
 
-    // Crear job (sin archivo - texto directo)
-    const job = {
-      id: jobId,
-      status: "pending" as const,
-      filePath: "", // No hay archivo
-      profileId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    jobs.set(jobId, job)
-
-    // Enviar a n8n webhook
     try {
       await sendTextToN8N(job, text)
     } catch (error) {
-      console.error(`[PROCESS TEXT] Error enviando a n8n:`, error)
+      console.error("[PROCESS TEXT] Error enviando a n8n:", error)
     }
 
-    console.log(`[PROCESS TEXT] Job ${jobId} creado para texto -> perfil ${profileId}`)
+    console.log(`[PROCESS TEXT] Job ${job.id} creado para texto -> perfil ${profileId}`)
 
-    res.json({
+    return res.json({
       success: true,
-      jobId,
+      jobId: job.id,
       status: "pending",
       message: "Texto enviado a procesamiento",
-      checkStatus: `GET /api/process/status?jobId=${jobId}`,
+      checkStatus: `GET /api/process/status?jobId=${job.id}`,
     })
   } catch (error) {
     console.error("[PROCESS TEXT ERROR]", error)
-    res.status(500).json({ error: "Error al iniciar procesamiento de texto" })
+    return res.status(500).json({ error: "Error al iniciar procesamiento de texto" })
   }
 })
 
-// Función para enviar texto a n8n webhook
-async function sendTextToN8N(job: any, text: string) {
-  const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/train"
-  
+function toInsertPayload(chunks: N8NChunk[], profileId: string, source: string) {
+  return chunks.map((chunk) => ({
+    id_profile: Number.parseInt(profileId, 10),
+    content: chunk.content || chunk.text || "",
+    metadata: chunk.metadata || { source },
+    embedding: chunk.embedding || [],
+  }))
+}
+
+async function finalizeJobWithN8NResult(job: ProcessJob, result: N8NResponse, source: string) {
+  const chunks = Array.isArray(result.chunks) ? result.chunks : []
+
+  if (!chunks.length) {
+    job.status = "completed"
+    job.result = result
+    touchProcessJob(job)
+    console.log(`[N8N] Job ${job.id} completado (sin chunks para insertar)`)
+    return
+  }
+
+  console.log(`[DB] Insertando ${chunks.length} chunks en Supabase...`)
+  const documents = toInsertPayload(chunks, job.profileId, source)
+  const { inserted } = await insertDocuments(documents)
+
+  job.status = "completed"
+  job.result = {
+    ...result,
+    inserted,
+    message: `${inserted} documentos insertados en el perfil ${job.profileId}`,
+  }
+  touchProcessJob(job)
+
+  console.log(`[DB] Job ${job.id} completado: ${inserted} documentos insertados`)
+}
+
+async function sendTextToN8N(job: ProcessJob, text: string) {
+  const webhook = getTrainWebhookUrl()
+
   try {
     job.status = "processing"
-    job.updatedAt = new Date().toISOString()
+    touchProcessJob(job)
 
-    console.log(`[N8N] Enviando texto a ${N8N_WEBHOOK}`)
-
-    const response = await fetch(N8N_WEBHOOK, {
+    const response = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -177,121 +183,54 @@ async function sendTextToN8N(job: any, text: string) {
     })
 
     if (!response.ok) {
-      throw new Error(`n8n respondió ${response.status}: ${await response.text()}`)
+      throw new Error(`n8n respondio ${response.status}: ${await response.text()}`)
     }
 
-    const result = await response.json()
-    
-    // n8n debe devolver: { chunks: [{ content, metadata, embedding }] }
-    if (result.chunks && Array.isArray(result.chunks) && result.chunks.length > 0) {
-      console.log(`[DB] Insertando ${result.chunks.length} chunks en Supabase...`)
-      
-      const documents = result.chunks.map((chunk: any) => ({
-        id_profile: parseInt(job.profileId),
-        content: chunk.content || chunk.text || "",
-        metadata: chunk.metadata || { source: "text-upload" },
-        embedding: chunk.embedding || [],
-      }))
-
-      const { inserted } = await insertDocuments(documents)
-      
-      job.status = "completed"
-      job.result = { 
-        ...result, 
-        inserted,
-        message: `${inserted} documentos insertados en el perfil ${job.profileId}`
-      }
-      job.updatedAt = new Date().toISOString()
-
-      console.log(`[DB] Job ${job.id} completado: ${inserted} documentos insertados`)
-    } else {
-      // n8n no devolvió chunks - solo marcamos como completado
-      job.status = "completed"
-      job.result = result
-      job.updatedAt = new Date().toISOString()
-      
-      console.log(`[N8N] Job ${job.id} completado (sin chunks para insertar):`, result)
-    }
-
-  } catch (error: any) {
+    const result = (await response.json()) as N8NResponse
+    await finalizeJobWithN8NResult(job, result, "text-upload")
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error"
     console.error(`[PROCESS ERROR] Job ${job.id}:`, error)
     job.status = "failed"
-    job.error = error.message
-    job.updatedAt = new Date().toISOString()
+    job.error = message
+    touchProcessJob(job)
     throw error
   }
 }
 
-// Función para enviar archivo a n8n webhook y guardar en DB
-async function sendToN8N(job: any, filename: string) {
-  const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/train"
-  
+async function sendFileToN8N(job: ProcessJob, filename: string) {
+  const webhook = getTrainWebhookUrl()
+
   try {
     job.status = "processing"
-    job.updatedAt = new Date().toISOString()
+    touchProcessJob(job)
 
     const formData = new FormData()
-    
-    // Leer archivo y crear blob
     const fileBuffer = await fs.readFile(job.filePath)
     const blob = new Blob([fileBuffer])
+
     formData.append("file", blob, filename)
     formData.append("profileId", job.profileId)
     formData.append("jobId", job.id)
-    formData.append("webhookResponse", "true") // Para que n8n responda sync
+    formData.append("webhookResponse", "true")
 
-    console.log(`[N8N] Enviando ${filename} a ${N8N_WEBHOOK}`)
-
-    const response = await fetch(N8N_WEBHOOK, {
+    const response = await fetch(webhook, {
       method: "POST",
       body: formData,
     })
 
     if (!response.ok) {
-      throw new Error(`n8n respondió ${response.status}: ${await response.text()}`)
+      throw new Error(`n8n respondio ${response.status}: ${await response.text()}`)
     }
 
-    const result = await response.json()
-    
-    // n8n debe devolver: { chunks: [{ content, metadata, embedding }] }
-    if (result.chunks && Array.isArray(result.chunks) && result.chunks.length > 0) {
-      console.log(`[DB] Insertando ${result.chunks.length} chunks en Supabase...`)
-      
-      const documents = result.chunks.map((chunk: any) => ({
-        id_profile: parseInt(job.profileId),
-        content: chunk.content || chunk.text || "",
-        metadata: chunk.metadata || { source: filename },
-        embedding: chunk.embedding || [],
-      }))
-
-      const { inserted } = await insertDocuments(documents)
-      
-      job.status = "completed"
-      job.result = { 
-        ...result, 
-        inserted,
-        message: `${inserted} documentos insertados en el perfil ${job.profileId}`
-      }
-      job.updatedAt = new Date().toISOString()
-
-      console.log(`[DB] Job ${job.id} completado: ${inserted} documentos insertados`)
-    } else {
-      // n8n no devolvió chunks - solo marcamos como completado
-      job.status = "completed"
-      job.result = result
-      job.updatedAt = new Date().toISOString()
-      
-      console.log(`[N8N] Job ${job.id} completado (sin chunks para insertar):`, result)
-    }
-
-    // Opcional: eliminar archivo después de procesar exitosamente
-    // await fs.unlink(job.filePath)
-
-  } catch (error: any) {
+    const result = (await response.json()) as N8NResponse
+    await finalizeJobWithN8NResult(job, result, filename)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error"
     console.error(`[PROCESS ERROR] Job ${job.id}:`, error)
     job.status = "failed"
-    job.error = error.message
-    job.updatedAt = new Date().toISOString()
+    job.error = message
+    touchProcessJob(job)
   }
 }
 
