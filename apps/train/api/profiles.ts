@@ -7,13 +7,9 @@ import {
   deleteProfile,
   getProfileDocCount,
 } from "./db.js"
+import { asNonEmptyString, asPositiveInt } from "../lib/validation.js"
 
 const router = Router()
-
-function parseId(value: string): number | null {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isNaN(parsed) ? null : parsed
-}
 
 router.get("/", async (req, res) => {
   try {
@@ -37,7 +33,7 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const id = parseId(req.params.id)
+    const id = asPositiveInt(req.params.id)
     if (id === null) {
       return res.status(400).json({ error: "ID invalido" })
     }
@@ -66,12 +62,13 @@ router.post("/", async (req, res) => {
   try {
     const { name, description } = req.body as { name?: string; description?: string }
 
-    if (!name || name.trim().length === 0) {
+    const parsedName = asNonEmptyString(name)
+    if (!parsedName) {
       return res.status(400).json({ error: "El nombre es requerido" })
     }
 
     const profile = await createProfile({
-      name: name.trim(),
+      name: parsedName,
       description: description?.trim(),
     })
 
@@ -96,7 +93,7 @@ router.post("/", async (req, res) => {
 
 router.patch("/:id", async (req, res) => {
   try {
-    const id = parseId(req.params.id)
+    const id = asPositiveInt(req.params.id)
     if (id === null) {
       return res.status(400).json({ error: "ID invalido" })
     }
@@ -135,7 +132,7 @@ router.patch("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
-    const id = parseId(req.params.id)
+    const id = asPositiveInt(req.params.id)
     if (id === null) {
       return res.status(400).json({ error: "ID invalido" })
     }
