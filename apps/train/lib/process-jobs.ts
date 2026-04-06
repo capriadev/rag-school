@@ -1,14 +1,7 @@
-export type ProcessJobStatus = "pending" | "processing" | "completed" | "failed"
+import type { ProcessJobDto, ProcessJobStatus } from "@rag/contracts"
 
-export type ProcessJob = {
-  id: string
-  status: ProcessJobStatus
+export type ProcessJob = ProcessJobDto & {
   filePath: string
-  profileId: string
-  result?: unknown
-  error?: string
-  createdAt: string
-  updatedAt: string
 }
 
 const jobs = new Map<string, ProcessJob>()
