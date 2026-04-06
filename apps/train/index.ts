@@ -12,7 +12,8 @@ import cors from "cors"
 import { uploadRouter } from "./api/upload.js"
 import { processRouter } from "./api/process.js"
 import { profilesRouter } from "./api/profiles.js"
-import { TRAIN_ADMIN_HTML_PATH, TRAIN_PORT, TRAIN_UPLOADS_DIR, getTrainWebhookUrl } from "./lib/config.js"
+import { systemRouter } from "./api/system.js"
+import { TRAIN_ADMIN_HTML_PATH, TRAIN_PORT } from "./lib/config.js"
 
 const app = express()
 
@@ -26,18 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api/upload", uploadRouter)
 app.use("/api/process", processRouter)
 app.use("/api/profiles", profilesRouter)
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", mode: "training-backend", timestamp: new Date().toISOString() })
-})
-
-app.get("/api/status", (req, res) => {
-  res.json({
-    status: "ready",
-    n8nWebhook: getTrainWebhookUrl(),
-    uploadPath: TRAIN_UPLOADS_DIR,
-  })
-})
+app.use(systemRouter)
 
 app.listen(TRAIN_PORT, () => {
   console.log(`[TRAIN] RAG Custom training backend escuchando en http://localhost:${TRAIN_PORT}`)
