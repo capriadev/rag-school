@@ -1,7 +1,7 @@
 "use client"
 
 import type { ChangeEvent, FormEvent } from "react"
-import type { ProfileOption } from "./types"
+import type { ProfileDto } from "@rag/contracts"
 
 const CHUNK_OPTIONS = [
   { value: 3, label: "Preciso" },
@@ -20,7 +20,7 @@ type ChatComposerProps = {
   placeholder: string
   selectedProfile: string
   setSelectedProfile: (value: string) => void
-  profiles: ProfileOption[]
+  profiles: ProfileDto[]
   profilesLoading: boolean
   chunkCount: number
   setChunkCount: (value: number) => void
