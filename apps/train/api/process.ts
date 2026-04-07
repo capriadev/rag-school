@@ -4,13 +4,16 @@ import fs from "node:fs/promises"
 import { TRAIN_UPLOADS_DIR } from "../lib/config.js"
 import { createProcessJob, getProcessJob, listProcessJobs } from "../lib/process-jobs.js"
 import { sendFileToN8N, sendTextToN8N } from "../services/process-service.js"
+import { asNonEmptyString } from "../lib/validation.js"
 
 const router = Router()
 
 
 router.post("/", async (req, res) => {
   try {
-    const { fileId, profileId } = req.body as { fileId?: string; profileId?: string }
+    const body = req.body as { fileId?: string; profileId?: string }
+    const fileId = asNonEmptyString(body.fileId)
+    const profileId = asNonEmptyString(body.profileId)
 
     if (!fileId || !profileId) {
       return res.status(400).json({
@@ -86,7 +89,9 @@ router.get("/jobs", (req, res) => {
 
 router.post("/text", async (req, res) => {
   try {
-    const { text, profileId } = req.body as { text?: string; profileId?: string }
+    const body = req.body as { text?: string; profileId?: string }
+    const text = asNonEmptyString(body.text)
+    const profileId = asNonEmptyString(body.profileId)
 
     if (!text || !profileId) {
       return res.status(400).json({
