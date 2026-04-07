@@ -8,6 +8,7 @@ import {
   getProfileDocCount,
 } from "./db.js"
 import { asNonEmptyString, asPositiveInt } from "../lib/validation.js"
+import { badRequest, internalError, notFound } from "../lib/http.js"
 
 const router = Router()
 
@@ -35,13 +36,13 @@ router.get("/:id", async (req, res) => {
   try {
     const id = asPositiveInt(req.params.id)
     if (id === null) {
-      return res.status(400).json({ error: "ID invalido" })
+      return badRequest(res, "ID invalido")
     }
 
     const [profile, docCount] = await Promise.all([getProfileById(id), getProfileDocCount(id)])
 
     if (!profile) {
-      return res.status(404).json({ error: "Perfil no encontrado" })
+      return notFound(res, "Perfil no encontrado")
     }
 
     return res.json({
@@ -52,9 +53,8 @@ router.get("/:id", async (req, res) => {
       },
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Error interno"
     console.error("[PROFILE GET ERROR]", error)
-    return res.status(500).json({ error: message })
+    return internalError(res, error, "Error interno")
   }
 })
 
@@ -64,7 +64,7 @@ router.post("/", async (req, res) => {
 
     const parsedName = asNonEmptyString(name)
     if (!parsedName) {
-      return res.status(400).json({ error: "El nombre es requerido" })
+      return badRequest(res, "El nombre es requerido")
     }
 
     const profile = await createProfile({
@@ -85,9 +85,8 @@ router.post("/", async (req, res) => {
       },
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Error interno"
     console.error("[PROFILE CREATE ERROR]", error)
-    return res.status(500).json({ error: message })
+    return internalError(res, error, "Error interno")
   }
 })
 
@@ -95,7 +94,7 @@ router.patch("/:id", async (req, res) => {
   try {
     const id = asPositiveInt(req.params.id)
     if (id === null) {
-      return res.status(400).json({ error: "ID invalido" })
+      return badRequest(res, "ID invalido")
     }
 
     const { name, description, active } = req.body as {
@@ -124,9 +123,8 @@ router.patch("/:id", async (req, res) => {
       },
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Error interno"
     console.error("[PROFILE UPDATE ERROR]", error)
-    return res.status(500).json({ error: message })
+    return internalError(res, error, "Error interno")
   }
 })
 
@@ -134,7 +132,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const id = asPositiveInt(req.params.id)
     if (id === null) {
-      return res.status(400).json({ error: "ID invalido" })
+      return badRequest(res, "ID invalido")
     }
 
     await deleteProfile(id)
@@ -145,9 +143,8 @@ router.delete("/:id", async (req, res) => {
       message: "Perfil eliminado correctamente",
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Error interno"
     console.error("[PROFILE DELETE ERROR]", error)
-    return res.status(500).json({ error: message })
+    return internalError(res, error, "Error interno")
   }
 })
 
