@@ -5,6 +5,7 @@ import { TRAIN_UPLOADS_DIR } from "../lib/config.js"
 import { createProcessJob, getProcessJob, listProcessJobs } from "../lib/process-jobs.js"
 import { asNonEmptyString } from "../lib/validation.js"
 import { sendFileToN8N, sendTextToN8N } from "../services/process-service.js"
+import { badRequest, internalError, notFound } from "../lib/http.js"
 
 export async function startFileProcessHandler(req: Request, res: Response) {
   try {
@@ -13,8 +14,7 @@ export async function startFileProcessHandler(req: Request, res: Response) {
     const profileId = asNonEmptyString(body.profileId)
 
     if (!fileId || !profileId) {
-      return res.status(400).json({
-        error: "Se requieren fileId y profileId",
+      return badRequest(res, "Se requieren fileId y profileId", {
         example: { fileId: "123456789-nombre.pdf", profileId: "1" },
       })
     }
@@ -23,7 +23,7 @@ export async function startFileProcessHandler(req: Request, res: Response) {
     const matchingFile = files.find((file) => file.includes(fileId))
 
     if (!matchingFile) {
-      return res.status(404).json({ error: `Archivo no encontrado: ${fileId}` })
+      return notFound(res, `Archivo no encontrado: ${fileId}`)
     }
 
     const filePath = path.join(TRAIN_UPLOADS_DIR, matchingFile)
@@ -46,7 +46,7 @@ export async function startFileProcessHandler(req: Request, res: Response) {
     })
   } catch (error) {
     console.error("[PROCESS ERROR]", error)
-    return res.status(500).json({ error: "Error al iniciar procesamiento" })
+    return internalError(res, error, "Error al iniciar procesamiento")
   }
 }
 
@@ -54,12 +54,12 @@ export function getProcessStatusHandler(req: Request, res: Response) {
   const { jobId } = req.query
 
   if (!jobId || typeof jobId !== "string") {
-    return res.status(400).json({ error: "Se requiere jobId" })
+    return badRequest(res, "Se requiere jobId")
   }
 
   const job = getProcessJob(jobId)
   if (!job) {
-    return res.status(404).json({ error: "Job no encontrado" })
+    return notFound(res, "Job no encontrado")
   }
 
   return res.json({
@@ -91,8 +91,7 @@ export async function startTextProcessHandler(req: Request, res: Response) {
     const profileId = asNonEmptyString(body.profileId)
 
     if (!text || !profileId) {
-      return res.status(400).json({
-        error: "Se requieren text y profileId",
+      return badRequest(res, "Se requieren text y profileId", {
         example: { text: "contenido a procesar", profileId: "1" },
       })
     }
@@ -116,6 +115,6 @@ export async function startTextProcessHandler(req: Request, res: Response) {
     })
   } catch (error) {
     console.error("[PROCESS TEXT ERROR]", error)
-    return res.status(500).json({ error: "Error al iniciar procesamiento de texto" })
+    return internalError(res, error, "Error al iniciar procesamiento de texto")
   }
 }
