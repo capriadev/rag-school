@@ -4,14 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
 import type { ChatMessage } from "../../components/chat/types"
 import { queryRagAnswer, streamChatCompletion } from "./chat-api"
-
-const PLACEHOLDERS = [
-  "Escribe tu consulta...",
-  "Que necesitas saber?",
-  "Pregunta lo que quieras...",
-  "En que puedo ayudarte?",
-  "Hazme una pregunta...",
-]
+import { CHAT_CONNECTION_ERROR, CHAT_PLACEHOLDERS } from "./chat-constants"
 
 function resetComposerHeights() {
   const textareas = document.querySelectorAll("textarea")
@@ -26,7 +19,7 @@ export function useChatSession() {
   const [selectedProfile, setSelectedProfile] = useState("chat")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [hasStartedChat, setHasStartedChat] = useState(false)
-  const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0])
+  const [placeholder, setPlaceholder] = useState(CHAT_PLACEHOLDERS[0])
 
   const maxContextTokens = selectedProfile === "chat" ? 64000 : 32000
 
@@ -36,8 +29,8 @@ export function useChatSession() {
   }, [messages])
 
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * PLACEHOLDERS.length)
-    setPlaceholder(PLACEHOLDERS[randomIndex])
+    const randomIndex = Math.floor(Math.random() * CHAT_PLACEHOLDERS.length)
+    setPlaceholder(CHAT_PLACEHOLDERS[randomIndex])
   }, [])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -75,7 +68,7 @@ export function useChatSession() {
           },
         )
       } catch {
-        setMessages((previous) => [...previous, { role: "assistant", content: "Error de conexion con el servidor." }])
+        setMessages((previous) => [...previous, { role: "assistant", content: CHAT_CONNECTION_ERROR }])
       }
 
       return
@@ -96,7 +89,7 @@ export function useChatSession() {
 
       setMessages((previous) => [...previous, { role: "assistant", content: `Error: ${result.error || "Unknown error"}` }])
     } catch {
-      setMessages((previous) => [...previous, { role: "assistant", content: "Error de conexion con el servidor." }])
+      setMessages((previous) => [...previous, { role: "assistant", content: CHAT_CONNECTION_ERROR }])
     }
   }
 
