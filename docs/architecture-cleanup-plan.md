@@ -5,66 +5,57 @@
 - Hay mezcla de responsabilidades entre `app/api` (query/chat), `train/` (admin local), y modulos de acceso a datos.
 - La UI principal (`components/chat-interface.tsx`) concentra demasiada logica y markup duplicado.
 - Existen fuentes de verdad duplicadas para perfiles y acceso a Supabase, lo que provoca drift.
-- La documentacion en `.kiro/` y los `README` tienen partes desactualizadas respecto al estado real.
+- Habia documentacion legada en `.kiro/` y `README` desalineada con la arquitectura actual.
 
 ## Objetivo de arquitectura
 
-- `app/` solo expone runtime web (chat/query + lectura de perfiles activos).
-- `train/` solo expone runtime admin local (CRUD perfiles + ingestion/process).
-- `lib/server/` encapsula dominio y acceso a datos compartido.
-- `components/` se divide en componentes UI chicos (presentational) y hooks de comportamiento.
+- `apps/web/` solo expone runtime web (chat/query + lectura de perfiles activos).
+- `apps/train/` solo expone runtime admin local (CRUD perfiles + ingestion/process).
+- `packages/*` concentra dominio, datos y contratos compartidos.
+- `apps/web/components/` se divide en UI presentacional + hooks/client services.
 - `docs/` mantiene decisiones, migraciones y convenciones vivas.
 
 ## Fronteras de sistema
 
-- Web runtime (`app/api/*`):
-  - `chat`, `query`, `profiles`, `health`, `keepalive`
+- Web runtime (`apps/web/app/api/*`):
+  - `chat`, `query`, `profiles`, `health`
   - Sin operaciones de entrenamiento pesado ni CRUD de admin.
-- Train runtime (`train/*`):
+- Train runtime (`apps/train/*`):
   - `upload`, `process`, `profiles`
   - Solo local; nunca deploy en Vercel.
-- Dominio compartido (`lib/server/*`):
-  - `profiles.ts`: reglas y operaciones de perfiles
-  - `supabase.ts`: cliente + operaciones de vector store
-  - `chat.ts`, `llm.ts`, `embeddings.ts`, etc.
+- Dominio compartido (`packages/core`, `packages/data`, `packages/contracts`):
+  - `profiles-service`: reglas y operaciones de perfiles
+  - `supabase-client`: cliente centralizado
+  - `contracts`: DTOs y tipos compartidos
 
 ## Fases de migracion
 
 1. Fase 1 - Unificacion de dominio (completada)
-- Mover y unificar operaciones de perfiles en `lib/server/profiles.ts`.
-- Hacer que `app/api/profiles` y `train/api/db.ts` consuman ese modulo.
+- Mover y unificar operaciones de perfiles en `packages/core`.
+- Hacer que `apps/web/app/api/profiles` y `apps/train/api/db.ts` consuman ese modulo.
 - Mantener compatibilidad de APIs actuales.
 
 2. Fase 2 - Modularizacion UI (en curso)
-- Extraer de `chat-interface.tsx`:
-  - `ChatHeader`
-  - `ChatComposer`
-  - `ProfileSelect`
-  - `ChunkSelect`
-  - `TokenUsageBar`
-  - `MessageList`
-- Crear hooks:
-  - `useProfiles`
-  - `useChatSession`
-  - `useAutoResizeTextarea`
+- Extraer de `chat-interface.tsx` componentes y hooks:
+  - `ChatComposer`, `ChatSidebar`, `AuthModal`, `ChatMessageList`
+  - `useProfiles`, `useChatSession`, `chat-api`
 
-3. Fase 3 - Servicios por caso de uso
-- Crear servicios de aplicacion:
-  - `lib/server/services/query-service.ts`
-  - `lib/server/services/train-service.ts`
-  - `lib/server/services/chat-service.ts`
-- Las rutas API solo validan request/response y delegan.
+3. Fase 3 - Servicios por caso de uso (en curso)
+- Separar handlers y servicios en train:
+  - `apps/train/api/process-handlers.ts`
+  - `apps/train/services/process-service.ts`
+- Las rutas API solo enrutan y delegan.
 
-4. Fase 4 - Normalizacion de contratos
-- Definir DTOs por endpoint en `lib/shared/contracts/*`.
+4. Fase 4 - Normalizacion de contratos (en curso)
+- Definir DTOs por endpoint en `packages/contracts`.
 - Estandarizar errores (`code`, `message`, `details`).
 - Agregar validacion de payload (zod o validadores internos).
 
-5. Fase 5 - Hardening
+5. Fase 5 - Hardening (pendiente)
 - Tests unitarios para servicios compartidos.
 - Tests de integracion para `app/api` y `train/api`.
 - Limpieza de codigo muerto y archivos no usados.
-- Actualizacion de `.kiro` + README en base a arquitectura final.
+- Actualizacion de `.agent/` + README en base a arquitectura final.
 
 ## Primeras reglas de codificacion (aplicar desde ahora)
 
