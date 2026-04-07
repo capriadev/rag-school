@@ -5,6 +5,7 @@ import fs from "node:fs/promises"
 import { TRAIN_UPLOADS_DIR } from "../lib/config.js"
 import { ensureUploadsDirectory, isAllowedUploadMime } from "../lib/uploads.js"
 import { asNonEmptyString } from "../lib/validation.js"
+import { badRequest, internalError } from "../lib/http.js"
 
 const router = Router()
 
@@ -36,14 +37,14 @@ const upload = multer({
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No se subio ningun archivo" })
+      return badRequest(res, "No se subio ningun archivo")
     }
 
     const { profileId: rawProfileId } = req.body as { profileId?: string }
     const profileId = asNonEmptyString(rawProfileId)
     if (!profileId) {
       await fs.unlink(req.file.path)
-      return res.status(400).json({ error: "Se requiere profileId" })
+      return badRequest(res, "Se requiere profileId")
     }
 
     const fileInfo = {
@@ -65,7 +66,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     })
   } catch (error) {
     console.error("[UPLOAD ERROR]", error)
-    return res.status(500).json({ error: "Error al procesar la subida" })
+    return internalError(res, error, "Error al procesar la subida")
   }
 })
 
@@ -90,8 +91,8 @@ router.get("/list", async (req, res) => {
       count: fileList.length,
       files: fileList.sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime()),
     })
-  } catch {
-    return res.status(500).json({ error: "Error al listar archivos" })
+  } catch (error) {
+    return internalError(res, error, "Error al listar archivos")
   }
 })
 
