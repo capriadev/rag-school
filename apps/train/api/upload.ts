@@ -4,6 +4,7 @@ import path from "node:path"
 import fs from "node:fs/promises"
 import { TRAIN_UPLOADS_DIR } from "../lib/config.js"
 import { ensureUploadsDirectory, isAllowedUploadMime } from "../lib/uploads.js"
+import { asNonEmptyString } from "../lib/validation.js"
 
 const router = Router()
 
@@ -38,7 +39,8 @@ router.post("/", upload.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No se subio ningun archivo" })
     }
 
-    const { profileId } = req.body as { profileId?: string }
+    const { profileId: rawProfileId } = req.body as { profileId?: string }
+    const profileId = asNonEmptyString(rawProfileId)
     if (!profileId) {
       await fs.unlink(req.file.path)
       return res.status(400).json({ error: "Se requiere profileId" })
