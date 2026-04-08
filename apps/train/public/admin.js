@@ -61,11 +61,12 @@ import {
     }
     
     // Cambiar tabs
-    function switchTab(tab) {
+    function switchTab(tab, tabElement) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       
-      event.target.classList.add('active');
+      const currentTabElement = tabElement || document.querySelector(`.tab[onclick*="'${tab}'"]`);
+      if (currentTabElement) currentTabElement.classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
     }
     
@@ -511,4 +512,21 @@ import {
         }
       });
     })();
+
+    Object.assign(window, {
+      openCreateModal,
+      closeCreateModal,
+      openEditModalById,
+      closeEditModal,
+      toggleEditProfile,
+      switchTab,
+      createProfile,
+      saveProfile,
+      filterProfiles,
+      goToPage,
+      updateFileInputText,
+      uploadFiles,
+      uploadText,
+      loadJobs
+    });
 
