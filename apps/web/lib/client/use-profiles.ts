@@ -7,11 +7,12 @@ export function useProfiles(selectedProfile: string, setSelectedProfile: (value:
   const [profiles, setProfiles] = useState<ProfileDto[]>([])
   const [profilesLoading, setProfilesLoading] = useState(true)
 
-  const loadProfiles = useCallback(async () => {
+  const loadProfiles = useCallback(async (signal?: AbortSignal) => {
     setProfilesLoading(true)
     try {
       const response = await fetch(`/api/profiles?t=${Date.now()}`, {
         cache: "no-store",
+        signal,
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
@@ -24,6 +25,9 @@ export function useProfiles(selectedProfile: string, setSelectedProfile: (value:
       }
       setProfiles([])
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return
+      }
       console.error("Failed to load profiles:", error)
       setProfiles([])
     } finally {
@@ -47,24 +51,29 @@ export function useProfiles(selectedProfile: string, setSelectedProfile: (value:
   }, [profiles, selectedProfile, setSelectedProfile])
 
   useEffect(() => {
-    loadProfiles()
+    const controller = new AbortController()
+    loadProfiles(controller.signal)
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        loadProfiles()
+        const refreshController = new AbortController()
+        loadProfiles(refreshController.signal)
       }
     }
     const handleFocus = () => {
-      loadProfiles()
+      const refreshController = new AbortController()
+      loadProfiles(refreshController.signal)
     }
     const handlePageShow = () => {
-      loadProfiles()
+      const refreshController = new AbortController()
+      loadProfiles(refreshController.signal)
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange)
     window.addEventListener("focus", handleFocus)
     window.addEventListener("pageshow", handlePageShow)
     return () => {
+      controller.abort()
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       window.removeEventListener("focus", handleFocus)
       window.removeEventListener("pageshow", handlePageShow)
