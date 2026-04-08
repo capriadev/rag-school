@@ -9,9 +9,9 @@
 <body>
   <div class="container">
     <h1>RAG <span>Custom</span></h1>
-    <p class="subtitle">Panel de Administración - Entrenamiento Local</p>
+    <p class="subtitle">Panel de Administracion - Entrenamiento Local</p>
     
-    <!-- Gestión de Perfiles -->
+    <!-- Gestion de Perfiles -->
     <div class="card" id="profilesCard">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3>Perfiles RAG</h3>
@@ -27,7 +27,7 @@
         <p style="color: #8e8ea9; text-align: center;">Cargando perfiles...</p>
       </div>
       
-      <!-- Paginación -->
+      <!-- Paginacion -->
       <div id="pagination" class="pagination" style="display: none;"></div>
       
       <div class="form-group" style="margin-top: 1rem;">
@@ -50,8 +50,8 @@
           <input type="text" id="newProfileName" placeholder="Ej: Escuela, Civil, Legal...">
         </div>
         <div class="form-group">
-          <label>Descripción (opcional)</label>
-          <input type="text" id="newProfileDesc" placeholder="Descripción del perfil...">
+          <label>Descripcion (opcional)</label>
+          <input type="text" id="newProfileDesc" placeholder="Descripcion del perfil...">
         </div>
         <div class="btn-group">
           <button class="secondary" onclick="closeCreateModal()">Cancelar</button>
@@ -82,7 +82,7 @@
           <input type="text" id="editProfileName">
         </div>
         <div class="form-group">
-          <label>Descripción</label>
+          <label>Descripcion</label>
           <input type="text" id="editProfileDesc">
         </div>
         <div class="btn-group">
@@ -108,21 +108,21 @@
           <label>Archivo</label>
           <div class="file-input-wrapper">
             <span class="file-input-btn">Elegir archivos</span>
-            <span class="file-input-text" id="fileInputText">Ningún archivo seleccionado</span>
+            <span class="file-input-text" id="fileInputText">Ningun archivo seleccionado</span>
             <input type="file" id="fileInput" multiple onchange="updateFileInputText()">
           </div>
           <div class="file-types">
             <span class="file-type">PDF</span>
             <span class="file-type">TXT</span>
             <span class="file-type">Markdown</span>
-            <span class="file-type">Imágenes</span>
+            <span class="file-type">Imagenes</span>
             <span class="file-type">Audio</span>
             <span class="file-type">Video</span>
             <span class="file-type">Excel</span>
             <span class="file-type">CSV</span>
             <span class="file-type">PPTX</span>
             <span class="file-type">Word</span>
-            <span class="file-type">Código</span>
+            <span class="file-type">Codigo</span>
           </div>
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
@@ -134,13 +134,13 @@
       <div id="tab-text" class="tab-content">
         <div class="form-group">
           <label>Texto para entrenar</label>
-          <textarea id="textInput" placeholder="Pega aquí el texto que quieres agregar al RAG...
+          <textarea id="textInput" placeholder="Pega aqui el texto que quieres agregar al RAG...
 
             Puede ser:
-            - Documentación
+            - Documentacion
             - Notas
             - Transcripciones
-            - Código
+            - Codigo
             - Cualquier texto plano">
           </textarea>
         </div>
@@ -171,5 +171,6 @@
     <script src="/public/admin.js"></script>
 </body>
 </html>
+
 
 

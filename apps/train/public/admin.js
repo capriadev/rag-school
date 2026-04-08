@@ -76,7 +76,7 @@ const API_URL = 'http://localhost:3001';
         if (!contentType || !contentType.includes('application/json')) {
           const text = await response.text();
           console.error('Respuesta no JSON:', text.substring(0, 200));
-          throw new Error('El servidor no respondió con JSON. ¿Está corriendo el backend?');
+          throw new Error('El servidor no respondio con JSON. ?Esta corriendo el backend?');
         }
         
         const data = await response.json();
@@ -100,7 +100,7 @@ const API_URL = 'http://localhost:3001';
           // Renderizar lista paginada (todos los perfiles)
           renderProfiles();
         } else {
-          select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta inválida') + '</option>';
+          select.innerHTML = '<option value="">Error: ' + (data.error || 'Respuesta invalida') + '</option>';
           list.innerHTML = '<p style="color: #ff4c6b; text-align: center;">Error cargando perfiles</p>';
         }
       } catch (error) {
@@ -110,7 +110,7 @@ const API_URL = 'http://localhost:3001';
       }
     }
     
-    // Filtrar perfiles por búsqueda
+    // Filtrar perfiles por busqueda
     function filterProfiles() {
       const query = document.getElementById('profileSearch').value.toLowerCase().trim();
       if (query === '') {
@@ -125,7 +125,7 @@ const API_URL = 'http://localhost:3001';
       renderProfiles();
     }
     
-    // Renderizar perfiles de la página actual
+    // Renderizar perfiles de la pagina actual
     function renderProfiles() {
       const list = document.getElementById('profilesList');
       const totalPages = Math.ceil(filteredProfiles.length / PROFILES_PER_PAGE);
@@ -140,7 +140,7 @@ const API_URL = 'http://localhost:3001';
         list.innerHTML = pageProfiles.map(p => renderProfileItem(p)).join('');
       }
       
-      // Renderizar paginación si hay más de 10 perfiles
+      // Renderizar paginacion si hay mas de 10 perfiles
       if (filteredProfiles.length > PROFILES_PER_PAGE) {
         renderPagination(totalPages);
         document.getElementById('pagination').style.display = 'flex';
@@ -149,18 +149,18 @@ const API_URL = 'http://localhost:3001';
       }
     }
     
-    // Renderizar controles de paginación
+    // Renderizar controles de paginacion
     function renderPagination(totalPages) {
       const container = document.getElementById('pagination');
       let html = '';
       
-      // Botón << (primera página)
+      // Boton << (primera pagina)
       html += '<button ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(1)"><<</button>';
       
-      // Botón < (anterior)
+      // Boton < (anterior)
       html += '<button ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage - 1) + ')"><</button>';
       
-      // Números de página
+      // Numeros de pagina
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
       let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -183,10 +183,10 @@ const API_URL = 'http://localhost:3001';
         html += '<button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>';
       }
       
-      // Botón > (siguiente)
+      // Boton > (siguiente)
       html += '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage + 1) + ')">></button>';
       
-      // Botón >> (última página)
+      // Boton >> (ultima pagina)
       html += '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="goToPage(' + totalPages + ')">>></button>';
       
       container.innerHTML = html;
@@ -203,7 +203,7 @@ const API_URL = 'http://localhost:3001';
       return '<div class="profile-item ' + activeClass + '" id="profile-' + p.id_profile + '">' +
         '<div class="profile-info">' +
           '<div class="profile-name">' + p.name + (p.doc_count > 0 ? ' (' + p.doc_count + ' docs)' : '') + '</div>' +
-          '<div class="profile-desc">' + (p.description || 'Sin descripción') + '</div>' +
+          '<div class="profile-desc">' + (p.description || 'Sin descripcion') + '</div>' +
         '</div>' +
         '<div class="profile-actions">' +
           '<button class="btn-small secondary" onclick="openEditModalById(' + p.id_profile + ')">Editar</button>' +
@@ -308,7 +308,7 @@ const API_URL = 'http://localhost:3001';
         fileInputText.textContent = count === 1 ? fileInput.files[0].name : `${count} archivos seleccionados`;
         fileInputText.style.color = '#ececf7';
       } else {
-        fileInputText.textContent = 'Ningún archivo seleccionado';
+        fileInputText.textContent = 'Ningun archivo seleccionado';
         fileInputText.style.color = '#8e8ea9';
       }
     }
@@ -455,7 +455,7 @@ const API_URL = 'http://localhost:3001';
           '<p><strong>Upload Path:</strong> ' + data.uploadPath + '</p>';
       } catch (error) {
         document.getElementById('systemStatus').innerHTML = 
-          '<p style="color: #ff4c6b;">Error: ¿Está corriendo el training backend? (npm run train)</p>';
+          '<p style="color: #ff4c6b;">Error: ?Esta corriendo el training backend? (npm run train)</p>';
       }
     }
     
@@ -477,15 +477,15 @@ const API_URL = 'http://localhost:3001';
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          <h3>Suelta los archivos aquí</h3>
-          <p>Se procesarán automáticamente</p>
+          <h3>Suelta los archivos aqui</h3>
+          <p>Se procesaran automaticamente</p>
         </div>
       `;
       document.body.appendChild(overlay);
       
       let dragCounter = 0;
       
-      // Mostrar overlay cuando se arrastra algo a la página
+      // Mostrar overlay cuando se arrastra algo a la pagina
       document.addEventListener('dragenter', function(e) {
         e.preventDefault();
         dragCounter++;
@@ -516,7 +516,7 @@ const API_URL = 'http://localhost:3001';
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-          // Cambiar a la tab de archivo si no está activa
+          // Cambiar a la tab de archivo si no esta activa
           if (!document.getElementById('tab-file').classList.contains('active')) {
             switchTab('file');
           }
@@ -537,3 +537,4 @@ const API_URL = 'http://localhost:3001';
         }
       });
     })();
+
