@@ -1,4 +1,12 @@
-const API_URL = 'http://localhost:3001';
+import {
+  createProfileApi,
+  getSystemStatusApi,
+  listProcessJobsApi,
+  listProfilesApi,
+  startFileProcessApi,
+  updateProfileApi,
+  uploadFileApi,
+} from "./admin-api.js";
     let allProfiles = [];
     let filteredProfiles = [];
     let currentPage = 1;
@@ -70,16 +78,7 @@ const API_URL = 'http://localhost:3001';
       list.innerHTML = '<p style="color: #8e8ea9; text-align: center;">Cargando perfiles...</p>';
       
       try {
-        const response = await fetch(API_URL + '/api/profiles');
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Respuesta no JSON:', text.substring(0, 200));
-          throw new Error('El servidor no respondio con JSON. ?Esta corriendo el backend?');
-        }
-        
-        const data = await response.json();
+        const data = await listProfilesApi();
         
         if (data.success && data.profiles) {
           allProfiles = data.profiles.map(p => ({ ...p, active: isActiveValue(p.active) }));
@@ -229,13 +228,7 @@ const API_URL = 'http://localhost:3001';
       showStatus('Creando perfil...', 'info', 'createStatus');
       
       try {
-        const response = await fetch(API_URL + '/api/profiles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, description: desc })
-        });
-        
-        const data = await response.json();
+        const data = await createProfileApi({ name: name, description: desc });
         
         if (data.success) {
           showStatus('Perfil "' + data.profile.name + '" creado exitosamente', 'success', 'createStatus');
@@ -267,13 +260,7 @@ const API_URL = 'http://localhost:3001';
       showStatus('Guardando cambios...', 'info', 'editStatus');
       
       try {
-        const response = await fetch(API_URL + '/api/profiles/' + id, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, description: desc, active: active })
-        });
-        
-        const data = await response.json();
+        const data = await updateProfileApi(id, { name: name, description: desc, active: active });
         
         if (data.success) {
           showStatus('Perfil actualizado exitosamente', 'success', 'editStatus');
@@ -357,27 +344,16 @@ const API_URL = 'http://localhost:3001';
       formData.append('file', file);
       formData.append('profileId', profileId);
       
-      const uploadRes = await fetch(API_URL + '/api/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const uploadData = await uploadRes.json();
+      const uploadData = await uploadFileApi(formData);
       
       if (!uploadData.success) {
         throw new Error(uploadData.error || 'Error al subir');
       }
       
-      const processRes = await fetch(API_URL + '/api/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileId: uploadData.file.id,
-          profileId: profileId
-        })
+      const processData = await startFileProcessApi({
+        fileId: uploadData.file.id,
+        profileId: profileId
       });
-      
-      const processData = await processRes.json();
       
       if (!processData.success) {
         throw new Error(processData.error);
@@ -426,8 +402,7 @@ const API_URL = 'http://localhost:3001';
     // Cargar jobs
     async function loadJobs() {
       try {
-        const response = await fetch(API_URL + '/api/process/jobs');
-        const data = await response.json();
+        const data = await listProcessJobsApi();
         
         const container = document.getElementById('jobsList');
         if (data.jobs && data.jobs.length > 0) {
@@ -446,8 +421,7 @@ const API_URL = 'http://localhost:3001';
     // Cargar estado del sistema
     async function loadSystemStatus() {
       try {
-        const response = await fetch(API_URL + '/api/status');
-        const data = await response.json();
+        const data = await getSystemStatusApi();
         
         document.getElementById('systemStatus').innerHTML = 
           '<p><strong>Estado:</strong> ' + data.status + '</p>' +
