@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3001"
+const API_URL = window.location.origin
 
 async function ensureJsonResponse(response) {
   const contentType = response.headers.get("content-type")
