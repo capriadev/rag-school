@@ -8,17 +8,19 @@
 
 import express from "express"
 import cors from "cors"
+import path from "node:path"
 
 import { uploadRouter } from "./api/upload.js"
 import { processRouter } from "./api/process.js"
 import { profilesRouter } from "./api/profiles.js"
 import { systemRouter } from "./api/system.js"
-import { TRAIN_ADMIN_HTML_PATH, TRAIN_PORT } from "./lib/config.js"
+import { TRAIN_ADMIN_HTML_PATH, TRAIN_PORT, TRAIN_ROOT_DIR } from "./lib/config.js"
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
+app.use("/public", express.static(path.join(TRAIN_ROOT_DIR, "public")))
 
 app.get("/", (req, res) => {
   res.sendFile(TRAIN_ADMIN_HTML_PATH)
