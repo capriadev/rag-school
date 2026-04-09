@@ -1,15 +1,5 @@
-import {
-  closeCreateModal,
-  closeEditModal,
-  createProfile,
-  filterProfiles,
-  goToPage,
-  loadProfiles,
-  openCreateModal,
-  openEditModalById,
-  saveProfile,
-  toggleEditProfile,
-} from './admin-profiles.js';
+import { closeCreateModal, closeEditModal, openCreateModal, openEditModalById, toggleEditProfile } from './admin-modals.js';
+import { createProfile, filterProfiles, goToPage, loadProfiles, saveProfile } from './admin-profiles.js';
 import {
   loadJobs,
   loadSystemStatus,
